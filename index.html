@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preload" href="/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin />
+    <title>TETRIS</title>
+  </head>
+  <body>
+    <div class="game" id="game">
+      <div class="col-left">
+        <div class="stat-box lines-box">
+          <div class="stat-inner lines-inner">LINES-<span id="lines">000</span></div>
+        </div>
+        <div class="bevel-frame playfield-frame">
+          <div class="bevel-gap">
+            <div class="bevel-cyan">
+              <div class="bevel-core">
+                <canvas id="board" width="380" height="760"></canvas>
+              </div>
+            </div>
+          </div>
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        </div>
+      </div>
+      <div class="col-right">
+        <div class="stat-box top-box">
+          <div class="stat-inner top-inner">
+            <div>TOP</div>
+            <div id="top">000000</div>
+            <div class="v-gap"></div>
+            <div>SCORE</div>
+            <div id="score">000000</div>
+          </div>
+        </div>
+        <div class="bevel-frame next-frame">
+          <div class="bevel-gap">
+            <div class="bevel-cyan">
+              <div class="bevel-core next-core">
+                <div class="next-label">NEXT</div>
+                <canvas id="next" width="172" height="160"></canvas>
+              </div>
+            </div>
+          </div>
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        </div>
+        <div class="stat-box level-box">
+          <div class="stat-inner level-inner">
+            <div>LEVEL</div>
+            <div id="level">00</div>
+          </div>
+        </div>
+      </div>
+      <i class="corner screen tl"></i><i class="corner screen tr"></i>
+      <i class="corner screen bl"></i><i class="corner screen br"></i>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
