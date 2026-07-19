@@ -225,6 +225,7 @@ export function initFrames(): void {
     const isBevel = frame.classList.contains('frame--bevel');
     const width = frame.offsetWidth;
     const height = frame.offsetHeight;
+    if (width === 0 || height === 0) return;
 
     // Check if canvas already exists, otherwise create one
     let canvas = frame.querySelector<HTMLCanvasElement>('.frame__canvas');

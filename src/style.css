@@ -6,6 +6,16 @@
   font-display: block;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 html,
 body {
   margin: 0;

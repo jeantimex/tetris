@@ -91,6 +91,7 @@ function fit(): void {
   initFrames();
 }
 window.addEventListener('resize', fit);
+window.addEventListener('orientationchange', fit);
 applyWall();
 fit();
 
@@ -180,11 +181,18 @@ menuCanvas.addEventListener('click', (e) => {
 
 /* ---------- menu visibility ---------- */
 
+let lastShowMenuState: boolean | null = null;
+
 function updateMenuVisibility(): void {
   const showMenu = game.phase === 'menu-type' || game.phase === 'menu-level' || game.phase === 'menu-settings';
   menuOverlay.classList.toggle('hidden', !showMenu);
   el.frame.style.display = showMenu ? 'none' : '';
   updateGameControls();
+
+  if (showMenu !== lastShowMenuState) {
+    lastShowMenuState = showMenu;
+    fit();
+  }
 }
 
 function updateGameControls(): void {
@@ -280,18 +288,24 @@ el.keyboardOverlay.addEventListener('click', (e) => {
       audio.sfxMove();
     }
   } else if (key === 'OK') {
-    if (game.enteredName.length > 0) {
+    if (game.enteredName.trim().length > 0) {
       // Save high score
       addHighScore(game.mode, {
         name: game.enteredName,
         score: game.score,
         level: game.level,
       });
-      game.phase = 'gameover';
-      game.gameOverSelection = 'restart';
-      audio.sfxRotate();
-      updateGameControls();
+      // Reload scores
+      if (game.mode === 'a') {
+        aScores = loadHighScores('a');
+      } else {
+        bScores = loadHighScores('b');
+      }
     }
+    game.phase = 'gameover';
+    game.gameOverSelection = 'restart';
+    audio.sfxRotate();
+    updateGameControls();
   } else if (game.enteredName.length < 6) {
     game.enteredName += key;
     audio.sfxMove();
@@ -569,6 +583,13 @@ game.on((e, data) => {
       break;
   }
 });
+
+const unlockAudio = () => {
+  audio.unlock();
+};
+window.addEventListener('pointerdown', unlockAudio, { passive: true });
+window.addEventListener('touchstart', unlockAudio, { passive: true });
+window.addEventListener('click', unlockAudio, { passive: true });
 
 window.addEventListener('keydown', (e) => {
   audio.unlock(); // browsers require a user gesture before audio
@@ -886,6 +907,10 @@ boardCanvas.addEventListener('contextmenu', (e) => {
 
 // Prevent page scroll and zoom on mobile
 document.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('dblclick', (e) => {
   e.preventDefault();
 }, { passive: false });
 

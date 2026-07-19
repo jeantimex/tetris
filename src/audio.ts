@@ -118,7 +118,9 @@ export class AudioEngine {
   /** Create/resume the context. Must be called from a user gesture. */
   unlock(): void {
     if (!this.ctx) {
-      this.ctx = new AudioContext();
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+      this.ctx = new AudioCtx();
       this.master = this.ctx.createGain();
       this.master.connect(this.ctx.destination);
       this.musicBus = this.ctx.createGain();
@@ -136,6 +138,7 @@ export class AudioEngine {
   }
 
   startMusic(trackNum: 1 | 2 | 3 = 1): void {
+    this.unlock();
     if (!this.ctx || !this.musicBus) return;
     this.stopMusic(0);
     this.currentTrack = trackNum - 1;
@@ -242,6 +245,7 @@ export class AudioEngine {
     sweepTo?: number,
     when = 0,
   ): void {
+    this.unlock();
     if (!this.ctx || !this.sfxBus) return;
     const ctx = this.ctx;
     const t = ctx.currentTime + when;
@@ -277,6 +281,7 @@ export class AudioEngine {
 
   /** Short filtered noise hit (hard drop slam). */
   private noiseBurst(dur: number, vol: number): void {
+    this.unlock();
     if (!this.ctx || !this.sfxBus || !this.noiseBuf) return;
     const ctx = this.ctx;
     const t = ctx.currentTime;
