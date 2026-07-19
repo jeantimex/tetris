@@ -1,6 +1,6 @@
 # TETRIS (NES Edition)
 
-A pixel-perfect, responsive web clone of classic NES Tetris, built with TypeScript, HTML5 Canvas, Vanilla CSS, and Vite.
+A responsive web clone of classic NES Tetris, built with TypeScript, HTML5 Canvas, Vanilla CSS, and Vite.
 
 ![B-TYPE Gameplay](screenshots/gameplay.png)
 
