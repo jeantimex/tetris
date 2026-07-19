@@ -809,36 +809,69 @@ window.addEventListener('keyup', (e) => {
 
 /* ---------- touch/gesture handling for mobile ---------- */
 
-const boardCanvas = document.getElementById('board') as HTMLCanvasElement;
-
 let pointerStartX = 0;
 let pointerStartY = 0;
+let lastStepX = 0;
 let pointerStartTime = 0;
 let activePointerId: number | null = null;
+let gestureLock: 'horizontal' | 'vertical' | null = null;
+let hardDroppedThisGesture = false;
 
-const SWIPE_THRESHOLD = 30; // minimum distance for swipe
-const TAP_THRESHOLD = 10; // max movement for tap
-const TAP_TIME_THRESHOLD = 300; // max time for tap in ms
+const SWIPE_STEP_PX = 25; // horizontal pixels per piece shift step
+const TAP_THRESHOLD_PX = 12; // max distance movement to be considered a tap
+const TAP_TIME_THRESHOLD_MS = 350; // max duration for a tap
 
-boardCanvas.addEventListener('pointerdown', (e) => {
+window.addEventListener('pointerdown', (e) => {
   if (game.phase !== 'playing' && game.phase !== 'start') return;
   if (activePointerId !== null) return; // already tracking a pointer
+
+  // Exclude buttons, menus, and virtual keyboard keys
+  const target = e.target as HTMLElement | null;
+  if (target?.closest('button, .game-btn, .keyboard__key, #menu-canvas, .keyboard-overlay')) {
+    return; // allow button and menu click handlers to execute normally
+  }
 
   activePointerId = e.pointerId;
   pointerStartX = e.clientX;
   pointerStartY = e.clientY;
+  lastStepX = e.clientX;
   pointerStartTime = Date.now();
-
-  // Capture pointer to receive events even outside the element
-  boardCanvas.setPointerCapture(e.pointerId);
-
-  e.preventDefault();
+  gestureLock = null;
+  hardDroppedThisGesture = false;
 });
 
-boardCanvas.addEventListener('pointermove', (e) => {
+window.addEventListener('pointermove', (e) => {
   if (activePointerId !== e.pointerId) return;
   if (game.phase !== 'playing' && game.phase !== 'start') return;
-  e.preventDefault();
+
+  const deltaX = e.clientX - pointerStartX;
+  const deltaY = e.clientY - pointerStartY;
+  const absX = Math.abs(deltaX);
+  const absY = Math.abs(deltaY);
+
+  // Lock gesture direction once movement exceeds 10px
+  if (!gestureLock && (absX > 10 || absY > 10)) {
+    gestureLock = absX > absY ? 'horizontal' : 'vertical';
+  }
+
+  if (game.phase === 'playing') {
+    if (gestureLock === 'horizontal') {
+      const stepDiff = e.clientX - lastStepX;
+      const steps = Math.trunc(stepDiff / SWIPE_STEP_PX);
+      if (steps !== 0) {
+        const dir = steps > 0 ? 1 : -1;
+        for (let i = 0; i < Math.abs(steps); i++) {
+          game.move(dir);
+        }
+        lastStepX += steps * SWIPE_STEP_PX;
+      }
+    } else if (gestureLock === 'vertical') {
+      if (deltaY > 40 && !hardDroppedThisGesture && game.dropKey !== 'default') {
+        hardDroppedThisGesture = true;
+        game.hardDrop();
+      }
+    }
+  }
 });
 
 function handlePointerEnd(e: PointerEvent): void {
@@ -846,9 +879,6 @@ function handlePointerEnd(e: PointerEvent): void {
 
   const currentPhase = game.phase;
   activePointerId = null;
-
-  // Release pointer capture
-  boardCanvas.releasePointerCapture(e.pointerId);
 
   if (currentPhase !== 'playing' && currentPhase !== 'start') return;
 
@@ -858,51 +888,29 @@ function handlePointerEnd(e: PointerEvent): void {
   const absX = Math.abs(deltaX);
   const absY = Math.abs(deltaY);
 
-  // Handle tap to start game
-  if (currentPhase === 'start') {
-    if (absX < TAP_THRESHOLD && absY < TAP_THRESHOLD && deltaTime < TAP_TIME_THRESHOLD) {
+  // Handle tap (small movement & short duration)
+  if (absX < TAP_THRESHOLD_PX && absY < TAP_THRESHOLD_PX && deltaTime < TAP_TIME_THRESHOLD_MS) {
+    if (currentPhase === 'start') {
       game.start();
       if (game.musicType !== 0) {
         audio.startMusic(game.musicType);
       }
       updateGameControls();
-    }
-    return;
-  }
-
-  // Below is for 'playing' phase only
-  // Check if it's a tap (small movement, short time)
-  if (absX < TAP_THRESHOLD && absY < TAP_THRESHOLD && deltaTime < TAP_TIME_THRESHOLD) {
-    // Tap to rotate
-    game.rotate(1);
-    return;
-  }
-
-  // Check for swipe
-  if (absX > SWIPE_THRESHOLD || absY > SWIPE_THRESHOLD) {
-    if (absX > absY) {
-      // Horizontal swipe
-      if (deltaX > 0) {
-        game.move(1); // swipe right
-      } else {
-        game.move(-1); // swipe left
-      }
-    } else {
-      // Vertical swipe
-      if (deltaY > 0 && game.dropKey !== 'default') {
-        // Swipe down - hard drop (only if drop mode is not default)
-        game.hardDrop();
-      }
+    } else if (currentPhase === 'playing') {
+      game.rotate(1);
     }
   }
 }
 
-boardCanvas.addEventListener('pointerup', handlePointerEnd);
-boardCanvas.addEventListener('pointercancel', handlePointerEnd);
+window.addEventListener('pointerup', handlePointerEnd);
+window.addEventListener('pointercancel', handlePointerEnd);
 
 // Prevent context menu on long press
-boardCanvas.addEventListener('contextmenu', (e) => {
-  e.preventDefault();
+window.addEventListener('contextmenu', (e) => {
+  const target = e.target as HTMLElement | null;
+  if (!target?.closest('button, .game-btn, .keyboard__key, #menu-canvas, .keyboard-overlay')) {
+    e.preventDefault();
+  }
 });
 
 // Prevent page scroll and zoom on mobile
