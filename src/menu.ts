@@ -31,6 +31,35 @@ export interface HighScoreEntry {
 
 const FONT = '"Press Start 2P", monospace';
 
+export interface ClickRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  action: string;
+  value?: string | number | boolean;
+}
+
+// Mode selection configuration
+interface SelectionOption {
+  text: string;
+  value: string | number | boolean;
+  color?: 'red' | 'green' | 'blue' | 'gold';
+}
+
+interface ModeSelectionConfig {
+  title: string;
+  titleColor: 'red' | 'green' | 'blue' | 'gold';
+  titleWidth?: number;
+  layout: 'horizontal' | 'vertical';
+  options: SelectionOption[];
+  selectedValue: string | number | boolean;
+  x: number;
+  y: number;
+  action: string;
+  gap?: number;
+}
+
 // Colors from NES palette
 const COLORS = {
   red: '#bc3c1d',
@@ -56,6 +85,8 @@ export class MenuRenderer {
   private ctx: CanvasRenderingContext2D;
   private width: number;
   private height: number;
+  private clickRegions: ClickRegion[] = [];
+  private scale: number = 1;
 
   constructor(canvas: HTMLCanvasElement) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -71,8 +102,36 @@ export class MenuRenderer {
     this.ctx = ctx;
   }
 
+  setScale(scale: number): void {
+    this.scale = scale;
+  }
+
+  getClickRegions(): ClickRegion[] {
+    return this.clickRegions;
+  }
+
+  handleClick(x: number, y: number): ClickRegion | null {
+    // Adjust for canvas scale
+    const canvasX = x / this.scale;
+    const canvasY = y / this.scale;
+
+    for (const region of this.clickRegions) {
+      if (
+        canvasX >= region.x &&
+        canvasX <= region.x + region.width &&
+        canvasY >= region.y &&
+        canvasY <= region.y + region.height
+      ) {
+        return region;
+      }
+    }
+    return null;
+  }
+
   draw(state: MenuState, aScores: HighScoreEntry[], bScores: HighScoreEntry[]): void {
     const ctx = this.ctx;
+    // Clear click regions for this frame
+    this.clickRegions = [];
     // Clear canvas to transparent so wall background shows through
     ctx.clearRect(0, 0, this.width, this.height);
 
@@ -92,21 +151,159 @@ export class MenuRenderer {
     }
   }
 
+  private drawModeSelection(config: ModeSelectionConfig): void {
+    const ctx = this.ctx;
+    const { title, titleColor, titleWidth = 200, layout, options, selectedValue, x, y, action, gap = 20 } = config;
+    const titleH = 44;
+    const spacing = 15; // Space between title and content
+
+    // Draw title label
+    this.drawLabelBox(x, y, titleWidth, titleH, title, titleColor);
+
+    // Content starts below title
+    const contentY = y + titleH / 2 + spacing;
+
+    if (layout === 'horizontal') {
+      // Calculate button dimensions
+      const buttonH = 56;
+      const fontSize = 16;
+      const arrowSpace = 24;
+      const innerPadding = 16;
+
+      ctx.font = `${fontSize}px ${FONT}`;
+      const widths = options.map(opt => ctx.measureText(opt.text).width + (arrowSpace + innerPadding) * 2);
+      const totalWidth = widths.reduce((sum, w) => sum + w, 0) + gap * (widths.length - 1);
+
+      // Position buttons centered
+      let currentX = x - totalWidth / 2;
+      const buttonY = contentY + buttonH / 2;
+
+      for (let i = 0; i < options.length; i++) {
+        const opt = options[i];
+        const btnX = currentX + widths[i] / 2;
+        const isSelected = opt.value === selectedValue;
+        const color = opt.color || 'gold';
+
+        this.drawButton(btnX, buttonY, opt.text, color, isSelected, fontSize);
+
+        // Register click region
+        this.clickRegions.push({
+          x: btnX - widths[i] / 2 - 4,
+          y: buttonY - buttonH / 2 - 4,
+          width: widths[i] + 8,
+          height: buttonH + 8,
+          action,
+          value: opt.value,
+        });
+
+        currentX += widths[i] + gap;
+      }
+    } else {
+      // Vertical layout - list style with dotted border
+      const itemH = 32;
+      const listH = options.length * itemH + 20;
+      const listY = contentY + listH / 2;
+
+      // Calculate longest text width for arrow positioning
+      ctx.font = `14px ${FONT}`;
+      const maxTextWidth = Math.max(...options.map(opt => ctx.measureText(opt.text).width));
+      const arrowSpacing = 12; // Space between text and arrows
+      const arrowOffset = maxTextWidth / 2 + arrowSpacing;
+
+      // List width based on content
+      const listW = Math.max(200, maxTextWidth + arrowSpacing * 2 + 40);
+
+      // Dotted border
+      ctx.strokeStyle = COLORS.goldLight;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(x - listW / 2, listY - listH / 2, listW, listH);
+      ctx.setLineDash([]);
+
+      // Fill
+      ctx.fillStyle = COLORS.black;
+      ctx.fillRect(x - listW / 2 + 2, listY - listH / 2 + 2, listW - 4, listH - 4);
+
+      // Draw options
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      for (let i = 0; i < options.length; i++) {
+        const opt = options[i];
+        const optY = listY - listH / 2 + 18 + i * itemH;
+        const isSelected = opt.value === selectedValue;
+
+        ctx.font = `14px ${FONT}`;
+        ctx.fillStyle = COLORS.white;
+        ctx.fillText(opt.text, x, optY);
+
+        // Show arrows for selected option with consistent spacing
+        if (isSelected) {
+          ctx.font = `12px ${FONT}`;
+          ctx.fillText('▶', x - arrowOffset, optY - 3);
+          ctx.fillText('◀', x + arrowOffset, optY - 3);
+        }
+
+        // Register click region
+        this.clickRegions.push({
+          x: x - listW / 2,
+          y: optY - itemH / 2,
+          width: listW,
+          height: itemH,
+          action,
+          value: opt.value,
+        });
+      }
+    }
+  }
+
   private drawTypeScreen(state: MenuState): void {
     const cx = this.width / 2;
 
-    // GAME TYPE label
-    this.drawLabelBox(cx, 60, 200, 44, 'GAME TYPE', 'gold');
+    // GAME TYPE selection (horizontal)
+    this.drawModeSelection({
+      title: 'GAME TYPE',
+      titleColor: 'gold',
+      layout: 'horizontal',
+      options: [
+        { text: 'A-TYPE', value: 'a', color: 'red' },
+        { text: 'B-TYPE', value: 'b', color: 'blue' },
+      ],
+      selectedValue: state.gameType,
+      x: cx,
+      y: 50,
+      action: 'gameType',
+      gap: 40,
+    });
 
-    // A-TYPE and B-TYPE buttons - arrows always show on selected type
-    this.drawTypeButton(cx - 110, 140, 'A-TYPE', 'red', state.gameType === 'a', state.gameType === 'a');
-    this.drawTypeButton(cx + 110, 140, 'B-TYPE', 'blue', state.gameType === 'b', state.gameType === 'b');
+    // MUSIC TYPE selection (vertical)
+    this.drawModeSelection({
+      title: 'MUSIC TYPE',
+      titleColor: 'gold',
+      titleWidth: 220,
+      layout: 'vertical',
+      options: [
+        { text: 'MUSIC - 1', value: 1 },
+        { text: 'MUSIC - 2', value: 2 },
+        { text: 'MUSIC - 3', value: 3 },
+        { text: 'OFF', value: 0 },
+      ],
+      selectedValue: state.musicType,
+      x: cx,
+      y: 195,
+      action: 'musicType',
+    });
 
-    // MUSIC TYPE label
-    this.drawLabelBox(cx, 220, 220, 44, 'MUSIC TYPE', 'gold');
-
-    // Music selection box - arrows always show on selected music
-    this.drawMusicBox(cx, 360, state.musicType);
+    // Navigation button - NEXT only (first screen)
+    this.drawNavButton(cx, 450, 'NEXT', 'green');
+    this.clickRegions.push({
+      x: cx - 60,
+      y: 450 - 20,
+      width: 120,
+      height: 40,
+      action: 'nav',
+      value: 'next',
+    });
   }
 
   private drawATypeScreen(state: MenuState, scores: HighScoreEntry[]): void {
@@ -125,7 +322,10 @@ export class MenuRenderer {
     this.drawLevelGrid(cx, 170, state.level, 10, 'green');
 
     // High scores
-    this.drawHighScores(cx, 310, scores);
+    this.drawHighScores(cx, 280, scores);
+
+    // Navigation buttons - positioned below the frame
+    this.drawNavButtons(cx, 460);
   }
 
   private drawBTypeScreen(state: MenuState, scores: HighScoreEntry[], focus: 'level' | 'height'): void {
@@ -146,92 +346,71 @@ export class MenuRenderer {
     this.drawHeightGrid(cx + 90, 170, state.height, focus === 'height');
 
     // High scores
-    this.drawHighScores(cx, 310, scores);
+    this.drawHighScores(cx, 280, scores);
+
+    // Navigation buttons - positioned below the frame
+    this.drawNavButtons(cx, 460);
   }
 
   private drawSettingsScreen(state: MenuState): void {
     const cx = this.width / 2;
 
-    // DROP MODE section
-    this.drawLabelBox(cx, 80, 220, 44, 'DROP MODE', 'gold');
+    // DROP MODE selection (horizontal)
+    this.drawModeSelection({
+      title: 'DROP MODE',
+      titleColor: 'gold',
+      titleWidth: 220,
+      layout: 'horizontal',
+      options: [
+        { text: 'SPACE', value: 'space', color: 'red' },
+        { text: 'UP', value: 'up', color: 'green' },
+        { text: 'DEFAULT', value: 'default', color: 'blue' },
+      ],
+      selectedValue: state.dropKey,
+      x: cx,
+      y: 50,
+      action: 'dropKey',
+      gap: 20,
+    });
 
-    const dropY = 160;
-    // Calculate button widths and center the group
-    const dropButtons = [
-      { text: 'SPACE', color: 'red' as const, key: 'space' as const },
-      { text: 'UP', color: 'green' as const, key: 'up' as const },
-      { text: 'DEFAULT', color: 'blue' as const, key: 'default' as const },
-    ];
-    const margin = 20;
-    const fontSize = 14;
-    const arrowSpace = 24;
-    const innerPadding = 16;
+    // GHOST MODE selection (vertical)
+    this.drawModeSelection({
+      title: 'GHOST MODE',
+      titleColor: 'gold',
+      titleWidth: 230,
+      layout: 'vertical',
+      options: [
+        { text: 'ON', value: true },
+        { text: 'OFF', value: false },
+      ],
+      selectedValue: state.ghost,
+      x: cx,
+      y: 195,
+      action: 'ghost',
+    });
 
-    // Calculate each button's width
-    this.ctx.font = `${fontSize}px ${FONT}`;
-    const widths = dropButtons.map(b => this.ctx.measureText(b.text).width + (arrowSpace + innerPadding) * 2);
-    const totalWidth = widths.reduce((sum, w) => sum + w, 0) + margin * (widths.length - 1);
-
-    // Position buttons starting from the left edge of the group
-    let currentX = cx - totalWidth / 2;
-    for (let i = 0; i < dropButtons.length; i++) {
-      const btn = dropButtons[i];
-      const btnX = currentX + widths[i] / 2;
-      this.drawSettingsButton(btnX, dropY, btn.text, btn.color, state.dropKey === btn.key, state.dropKey === btn.key);
-      currentX += widths[i] + margin;
-    }
-
-    // GHOST MODE section
-    this.drawLabelBox(cx, 250, 230, 44, 'GHOST MODE', 'gold');
-
-    // Ghost selection box (vertical list like music)
-    this.drawGhostBox(cx, 360, state.ghost);
+    // Navigation buttons - BACK and START
+    this.drawNavButton(cx - 80, 450, 'BACK', 'red');
+    this.drawNavButton(cx + 80, 450, 'START', 'green');
+    this.clickRegions.push({
+      x: cx - 80 - 60,
+      y: 450 - 20,
+      width: 120,
+      height: 40,
+      action: 'nav',
+      value: 'back',
+    });
+    this.clickRegions.push({
+      x: cx + 80 - 60,
+      y: 450 - 20,
+      width: 120,
+      height: 40,
+      action: 'nav',
+      value: 'start',
+    });
   }
 
-  private drawGhostBox(x: number, y: number, ghostOn: boolean): void {
-    const ctx = this.ctx;
-    const w = 160;
-    const h = 100;
-
-    // Dotted border
-    ctx.strokeStyle = COLORS.goldLight;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 4]);
-    ctx.strokeRect(x - w/2, y - h/2, w, h);
-    ctx.setLineDash([]);
-
-    // Fill
-    ctx.fillStyle = COLORS.black;
-    ctx.fillRect(x - w/2 + 2, y - h/2 + 2, w - 4, h - 4);
-
-    // Options
-    const options = ['ON', 'OFF'];
-    ctx.font = `16px ${FONT}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = COLORS.white;
-
-    for (let i = 0; i < options.length; i++) {
-      const oy = y - 30 + i * 40;
-      const isSelected = (i === 0 && ghostOn) || (i === 1 && !ghostOn);
-
-      ctx.fillText(options[i], x, oy);
-
-      // Show arrows around selected option (offset up to center)
-      if (isSelected) {
-        ctx.font = `12px ${FONT}`;
-        ctx.fillText('▶', x - 50, oy - 3);
-        ctx.fillText('◀', x + 50, oy - 3);
-        ctx.font = `16px ${FONT}`;
-      }
-    }
-  }
-
-  private drawSettingsButton(x: number, y: number, text: string, color: 'red' | 'blue' | 'green', _selected: boolean, showArrows: boolean): void {
-    this.drawButton(x, y, text, color, showArrows, 14);
-  }
-
-  private drawLabelBox(x: number, y: number, w: number, h: number, text: string, color: 'gold' | 'red' | 'blue'): void {
+  private drawLabelBox(x: number, y: number, w: number, h: number, text: string, color: 'gold' | 'red' | 'blue' | 'green'): void {
     const ctx = this.ctx;
     const colors = this.getColorSet(color);
 
@@ -258,7 +437,7 @@ export class MenuRenderer {
   }
 
   /** Unified button with consistent padding - arrows always have space reserved */
-  private drawButton(x: number, y: number, text: string, color: 'red' | 'blue' | 'green', showArrows: boolean, fontSize = 16): void {
+  private drawButton(x: number, y: number, text: string, color: 'red' | 'blue' | 'green' | 'gold', showArrows: boolean, fontSize = 16): void {
     const ctx = this.ctx;
     const arrowSpace = 24; // Space for arrow on each side
     const innerPadding = 16; // Padding between arrow and text
@@ -349,55 +528,13 @@ export class MenuRenderer {
     }
   }
 
-  private drawTypeButton(x: number, y: number, text: string, color: 'red' | 'blue', _filled: boolean, showArrows: boolean): void {
-    this.drawButton(x, y, text, color, showArrows, 16);
-  }
-
-  private drawMusicBox(x: number, y: number, selected: MusicType): void {
-    const ctx = this.ctx;
-    const w = 200;
-    const h = 160;
-
-    // Dotted border
-    ctx.strokeStyle = COLORS.goldLight;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 4]);
-    ctx.strokeRect(x - w/2, y - h/2, w, h);
-    ctx.setLineDash([]);
-
-    // Fill
-    ctx.fillStyle = COLORS.black;
-    ctx.fillRect(x - w/2 + 2, y - h/2 + 2, w - 4, h - 4);
-
-    // Options
-    const options = ['MUSIC - 1', 'MUSIC - 2', 'MUSIC - 3', 'OFF'];
-    ctx.font = `14px ${FONT}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    for (let i = 0; i < options.length; i++) {
-      const oy = y - 50 + i * 32;
-      const isSelected = selected === (i === 3 ? 0 : i + 1);
-
-      ctx.fillStyle = COLORS.white;
-      ctx.fillText(options[i], x, oy);
-
-      // Show arrows around selected music option (offset up to center)
-      if (isSelected) {
-        ctx.font = `12px ${FONT}`;
-        ctx.fillText('▶', x - 80, oy - 3);
-        ctx.fillText('◀', x + 80, oy - 3);
-        ctx.font = `14px ${FONT}`;
-      }
-    }
-  }
-
   private drawFullFrame(color: 'red' | 'blue'): void {
     const ctx = this.ctx;
     const colors = this.getColorSet(color);
     const m = 20; // margin
+    const mb = 60; // bottom margin (leave room for nav buttons)
     const w = this.width - m * 2;
-    const h = this.height - m * 2;
+    const h = this.height - m - mb;
 
     // Fill inside with black
     ctx.fillStyle = COLORS.black;
@@ -499,6 +636,16 @@ export class MenuRenderer {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(String(i), cx, cy);
+
+      // Register click region for this level cell
+      this.clickRegions.push({
+        x: cx - cellSize / 2,
+        y: cy - cellSize / 2,
+        width: cellSize,
+        height: cellSize,
+        action: 'level',
+        value: i,
+      });
     }
   }
 
@@ -536,6 +683,16 @@ export class MenuRenderer {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(String(rowCounts[i]), cx, cy);
+
+      // Register click region for this height cell
+      this.clickRegions.push({
+        x: cx - cellSize / 2,
+        y: cy - cellSize / 2,
+        width: cellSize,
+        height: cellSize,
+        action: 'height',
+        value: i,
+      });
     }
   }
 
@@ -584,6 +741,60 @@ export class MenuRenderer {
       case 'green':
         return { main: COLORS.green, light: COLORS.greenLight, dark: COLORS.greenDark };
     }
+  }
+
+  private drawNavButton(x: number, y: number, text: string, color: 'red' | 'green' | 'blue'): void {
+    const ctx = this.ctx;
+    const colors = this.getColorSet(color);
+    const w = 100;
+    const h = 32;
+
+    // Background
+    ctx.fillStyle = COLORS.black;
+    ctx.fillRect(x - w/2, y - h/2, w, h);
+
+    // Border
+    ctx.strokeStyle = colors.main;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x - w/2, y - h/2, w, h);
+
+    // Corner highlights
+    ctx.fillStyle = colors.light;
+    ctx.fillRect(x - w/2 + 2, y - h/2 + 2, 4, 4);
+    ctx.fillRect(x + w/2 - 6, y - h/2 + 2, 4, 4);
+    ctx.fillRect(x - w/2 + 2, y + h/2 - 6, 4, 4);
+    ctx.fillRect(x + w/2 - 6, y + h/2 - 6, 4, 4);
+
+    // Text
+    ctx.fillStyle = colors.light;
+    ctx.font = `12px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+  }
+
+  private drawNavButtons(cx: number, y: number): void {
+    // BACK button on left
+    this.drawNavButton(cx - 80, y, 'BACK', 'red');
+    this.clickRegions.push({
+      x: cx - 80 - 50,
+      y: y - 16,
+      width: 100,
+      height: 32,
+      action: 'nav',
+      value: 'back',
+    });
+
+    // NEXT button on right
+    this.drawNavButton(cx + 80, y, 'NEXT', 'green');
+    this.clickRegions.push({
+      x: cx + 80 - 50,
+      y: y - 16,
+      width: 100,
+      height: 32,
+      action: 'nav',
+      value: 'next',
+    });
   }
 }
 

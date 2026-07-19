@@ -268,3 +268,105 @@ canvas {
 #menu-canvas {
   image-rendering: pixelated;
 }
+
+/* ---------- game controls ---------- */
+
+.game-controls {
+  position: absolute;
+  left: 0;
+  top: 710px;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  z-index: 10;
+}
+
+.game-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  padding: 14px 40px;
+  border: 3px solid;
+  background: #000;
+  cursor: pointer;
+  position: relative;
+  min-width: 140px;
+  text-align: center;
+}
+
+.game-btn::before,
+.game-btn::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+}
+
+.game-btn::before {
+  top: 3px;
+  left: 3px;
+}
+
+.game-btn::after {
+  top: 3px;
+  right: 3px;
+}
+
+.game-btn--start {
+  border-color: #2d8d1a;
+  color: #4dea2e;
+}
+
+.game-btn--start::before,
+.game-btn--start::after {
+  background: #4dea2e;
+}
+
+.game-btn--quit {
+  border-color: #a02830;
+  color: #f07878;
+}
+
+.game-btn--quit::before,
+.game-btn--quit::after {
+  background: #f07878;
+}
+
+.game-btn--pause {
+  border-color: #c8a028;
+  color: #f8d878;
+}
+
+.game-btn--pause::before,
+.game-btn--pause::after {
+  background: #f8d878;
+}
+
+.game-btn--resume {
+  border-color: #2d8d1a;
+  color: #4dea2e;
+}
+
+.game-btn--resume::before,
+.game-btn--resume::after {
+  background: #4dea2e;
+}
+
+.game-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px #f8f8f8;
+}
+
+.game-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px #f8f8f8;
+}
+
+.game-btn:hover {
+  filter: brightness(1.2);
+}
+
+.game-btn.hidden {
+  display: none;
+}

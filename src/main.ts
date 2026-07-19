@@ -33,6 +33,11 @@ const el = {
   stats: new Map<PieceType, HTMLElement>(
     TYPES.map((t) => [t, document.getElementById(`stat-${t}`)!]),
   ),
+  controls: document.getElementById('game-controls')!,
+  btnStart: document.getElementById('btn-start')!,
+  btnQuit: document.getElementById('btn-quit')!,
+  btnPause: document.getElementById('btn-pause')!,
+  btnResume: document.getElementById('btn-resume')!,
 };
 
 // debug/testing hook
@@ -59,19 +64,106 @@ let bScores: HighScoreEntry[] = loadHighScores('b');
 
 /* ---------- fit to window ---------- */
 
+let menuScale = 1;
+
 function fit(): void {
   const scale = Math.min(window.innerWidth / 1006, window.innerHeight / 934);
   el.frame.style.transform = `translate(-50%, -50%) scale(${scale})`;
   syncWallScale(scale);
 
-  // Scale menu canvas too
-  const menuScale = Math.min(window.innerWidth / 540, window.innerHeight / 520);
+  // Scale menu canvas to fill available space
+  menuScale = Math.min(window.innerWidth / 520, window.innerHeight / 490);
   menuCanvas.style.transform = `scale(${menuScale})`;
+  menuRenderer.setScale(menuScale);
 }
 window.addEventListener('resize', fit);
 applyWall();
 initFrames();
 fit();
+
+/* ---------- menu click handling ---------- */
+
+menuCanvas.addEventListener('click', (e) => {
+  const rect = menuCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const region = menuRenderer.handleClick(x, y);
+  if (!region) return;
+
+  // Handle the click based on the action and current phase
+  if (game.phase === 'menu-type') {
+    if (region.action === 'gameType') {
+      menuState.gameType = region.value as 'a' | 'b';
+      audio.sfxMove();
+    } else if (region.action === 'musicType') {
+      menuState.musicType = region.value as MusicType;
+      menuState.musicCursor = region.value === 0 ? 3 : (region.value as number) - 1;
+      audio.sfxMove();
+    } else if (region.action === 'nav' && region.value === 'next') {
+      // Proceed to level select screen
+      game.startMode = menuState.gameType;
+      game.musicType = menuState.musicType;
+      menuState.phase = menuState.gameType === 'a' ? 'atype' : 'btype';
+      menuState.level = game.startLevel;
+      menuState.height = game.startHeight;
+      game.phase = 'menu-level';
+      audio.sfxRotate();
+    }
+  } else if (game.phase === 'menu-level') {
+    if (region.action === 'level') {
+      menuState.level = region.value as number;
+      if (menuState.gameType === 'b') {
+        menuState.btypeFocus = 'level';
+      }
+      audio.sfxMove();
+    } else if (region.action === 'height' && menuState.gameType === 'b') {
+      menuState.height = region.value as number;
+      menuState.btypeFocus = 'height';
+      audio.sfxMove();
+    } else if (region.action === 'nav') {
+      if (region.value === 'back') {
+        // Go back to type selection
+        menuState.phase = 'type';
+        menuState.btypeFocus = 'level';
+        game.phase = 'menu-type';
+        audio.sfxMove();
+      } else if (region.value === 'next') {
+        // Go to settings screen
+        game.startLevel = menuState.level;
+        game.startHeight = menuState.height;
+        menuState.phase = 'settings';
+        menuState.settingsCursor = 0;
+        game.phase = 'menu-settings';
+        audio.sfxRotate();
+      }
+    }
+  } else if (game.phase === 'menu-settings') {
+    if (region.action === 'dropKey') {
+      menuState.dropKey = region.value as 'space' | 'up' | 'default';
+      audio.sfxMove();
+    } else if (region.action === 'ghost') {
+      menuState.ghost = region.value as boolean;
+      audio.sfxMove();
+    } else if (region.action === 'nav') {
+      if (region.value === 'back') {
+        // Go back to level select
+        menuState.phase = menuState.gameType === 'a' ? 'atype' : 'btype';
+        game.phase = 'menu-level';
+        audio.sfxMove();
+      } else if (region.value === 'start') {
+        // Apply settings and prepare for new game
+        game.dropKey = menuState.dropKey;
+        game.ghost = menuState.ghost;
+        game.saveSettings();
+        game.prepareNewGame();
+        game.phase = 'start';
+        updateMenuVisibility();
+        audio.sfxRotate();
+      }
+    }
+  }
+});
 
 /* ---------- menu visibility ---------- */
 
@@ -79,7 +171,64 @@ function updateMenuVisibility(): void {
   const showMenu = game.phase === 'menu-type' || game.phase === 'menu-level' || game.phase === 'menu-settings';
   menuOverlay.classList.toggle('hidden', !showMenu);
   el.frame.style.display = showMenu ? 'none' : '';
+  updateGameControls();
 }
+
+function updateGameControls(): void {
+  const phase = game.phase;
+  const showControls = phase === 'start' || phase === 'playing' || phase === 'paused';
+  el.controls.style.display = showControls ? 'flex' : 'none';
+
+  // Show/hide individual buttons based on phase
+  el.btnStart.classList.toggle('hidden', phase !== 'start');
+  el.btnQuit.classList.toggle('hidden', phase !== 'start' && phase !== 'paused');
+  el.btnPause.classList.toggle('hidden', phase !== 'playing');
+  el.btnResume.classList.toggle('hidden', phase !== 'paused');
+}
+
+// Game control button handlers
+el.btnStart.addEventListener('click', () => {
+  if (game.phase === 'start') {
+    game.start();
+    if (game.musicType !== 0) {
+      audio.startMusic(game.musicType);
+    }
+    updateGameControls();
+  }
+});
+
+el.btnQuit.addEventListener('click', () => {
+  if (game.phase === 'start') {
+    // Go back to settings screen
+    game.phase = 'menu-settings';
+    menuState.phase = 'settings';
+    updateMenuVisibility();
+    audio.sfxMove();
+  } else if (game.phase === 'paused') {
+    // Quit to main menu
+    audio.setPaused(false);
+    audio.stopMusic();
+    game.phase = 'menu-type';
+    menuState.phase = 'type';
+    updateMenuVisibility();
+  }
+});
+
+el.btnPause.addEventListener('click', () => {
+  if (game.phase === 'playing') {
+    game.togglePause();
+    audio.setPaused(true);
+    updateGameControls();
+  }
+});
+
+el.btnResume.addEventListener('click', () => {
+  if (game.phase === 'paused') {
+    game.togglePause();
+    audio.setPaused(false);
+    updateGameControls();
+  }
+});
 
 /* ---------- input with NES-style DAS auto-repeat ---------- */
 
@@ -385,6 +534,7 @@ window.addEventListener('keydown', (e) => {
         if (game.pauseSelection === 'continue') {
           game.togglePause();
           audio.setPaused(false);
+          updateGameControls();
         } else {
           // Quit to main menu
           audio.setPaused(false); // Reset audio state before stopping
@@ -400,6 +550,7 @@ window.addEventListener('keydown', (e) => {
         // Resume on ESC/P
         game.togglePause();
         audio.setPaused(false);
+        updateGameControls();
         break;
     }
     return;
@@ -522,13 +673,21 @@ window.addEventListener('keydown', (e) => {
         if (game.musicType !== 0) {
           audio.startMusic(game.musicType);
         }
+        updateGameControls();
       }
       break;
     case 'KeyP':
     case 'Escape':
-      if (game.phase === 'playing') {
+      if (game.phase === 'start') {
+        // Go back to settings screen before game starts
+        game.phase = 'menu-settings';
+        menuState.phase = 'settings';
+        updateMenuVisibility();
+        audio.sfxMove();
+      } else if (game.phase === 'playing') {
         game.togglePause();
         audio.setPaused(true);
+        updateGameControls();
       }
       break;
     case 'KeyM':
