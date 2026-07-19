@@ -5,6 +5,7 @@ export const ROWS = 20;
 
 export type Cell = PieceType | 0;
 export type Phase = 'start' | 'playing' | 'clearing' | 'paused' | 'gameover';
+export type GameEvent = 'move' | 'rotate' | 'lock' | 'clear' | 'levelup' | 'gameover';
 
 export interface ActivePiece {
   type: PieceType;
@@ -42,10 +43,19 @@ export class Game {
   private gravityAcc = 0;
   private clearAcc = 0;
   private softDrop = false;
+  private listeners: ((e: GameEvent, data: number) => void)[] = [];
 
   constructor() {
     this.resetBoard();
     this.top = Number(localStorage.getItem(TOP_KEY) ?? 0) || 0;
+  }
+
+  on(fn: (e: GameEvent, data: number) => void): void {
+    this.listeners.push(fn);
+  }
+
+  private emit(e: GameEvent, data = 0): void {
+    for (const fn of this.listeners) fn(e, data);
   }
 
   private resetBoard(): void {
@@ -98,6 +108,7 @@ export class Game {
     if (this.phase !== 'playing' || !this.active) return;
     if (!this.collides(this.active.type, this.active.rot, this.active.x + dir, this.active.y)) {
       this.active.x += dir;
+      this.emit('move');
     }
   }
 
@@ -107,6 +118,7 @@ export class Game {
     const rot = (this.active.rot + dir + states) % states;
     if (!this.collides(this.active.type, rot, this.active.x, this.active.y)) {
       this.active.rot = rot;
+      this.emit('rotate');
     }
   }
 
@@ -127,6 +139,7 @@ export class Game {
       if (cy >= 0 && cy < ROWS && cx >= 0 && cx < COLS) this.board[cy][cx] = this.active.type;
     }
     this.active = null;
+    this.emit('lock');
 
     const full: number[] = [];
     for (let y = 0; y < ROWS; y++) {
@@ -134,12 +147,15 @@ export class Game {
     }
 
     if (full.length > 0) {
+      const prevLevel = this.level;
       this.clearingRows = full;
       this.clearAcc = 0;
       this.lines += full.length;
       this.score += LINE_POINTS[full.length - 1] * (this.level + 1);
       this.level = this.startLevel + Math.floor(this.lines / 10);
       this.phase = 'clearing';
+      this.emit('clear', full.length);
+      if (this.level > prevLevel) this.emit('levelup', this.level);
     } else {
       this.spawn();
     }
@@ -165,6 +181,7 @@ export class Game {
         this.top = this.score;
         localStorage.setItem(TOP_KEY, String(this.top));
       }
+      this.emit('gameover');
     }
   }
 

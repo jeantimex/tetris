@@ -188,7 +188,8 @@ export class Renderer {
       { text: `LEVEL < ${lv} >`, size: 13, gap: 44 },
       { text: 'ARROWS  MOVE', size: 10, gap: 14 },
       { text: 'Z X     ROTATE', size: 10, gap: 14 },
-      { text: 'P       PAUSE', size: 10, gap: 0 },
+      { text: 'P       PAUSE', size: 10, gap: 14 },
+      { text: 'M       SOUND', size: 10, gap: 0 },
     ];
   }
 }

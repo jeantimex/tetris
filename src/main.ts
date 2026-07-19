@@ -2,6 +2,7 @@ import './style.css';
 import { Game } from './game';
 import { Renderer } from './renderer';
 import { TYPES, type PieceType } from './pieces';
+import { AudioEngine } from './audio';
 
 const statCanvases = new Map<PieceType, HTMLCanvasElement>();
 for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas[data-piece]')) {
@@ -80,7 +81,37 @@ function onDirUp(dir: -1 | 1): void {
   }
 }
 
+/* ---------- audio ---------- */
+
+const audio = new AudioEngine();
+(window as unknown as { __audio: AudioEngine }).__audio = audio; // debug/testing hook
+
+game.on((e, data) => {
+  switch (e) {
+    case 'move':
+      audio.sfxMove();
+      break;
+    case 'rotate':
+      audio.sfxRotate();
+      break;
+    case 'lock':
+      audio.sfxLock();
+      break;
+    case 'clear':
+      audio.sfxClear(data);
+      break;
+    case 'levelup':
+      audio.sfxLevelUp();
+      break;
+    case 'gameover':
+      audio.stopMusic();
+      audio.sfxGameOver();
+      break;
+  }
+});
+
 window.addEventListener('keydown', (e) => {
+  audio.unlock(); // browsers require a user gesture before audio
   if (e.repeat) {
     if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
     return;
@@ -109,11 +140,18 @@ window.addEventListener('keydown', (e) => {
       game.rotate(-1);
       break;
     case 'Enter':
-      if (game.phase === 'start' || game.phase === 'gameover') game.start();
+      if (game.phase === 'start' || game.phase === 'gameover') {
+        game.start();
+        audio.startMusic();
+      }
       break;
     case 'KeyP':
     case 'Escape':
       game.togglePause();
+      audio.setPaused(game.phase === 'paused');
+      break;
+    case 'KeyM':
+      audio.toggleMute();
       break;
   }
 });
