@@ -156,11 +156,30 @@ export class MenuRenderer {
     this.drawLabelBox(cx, 80, 220, 44, 'DROP MODE', 'gold');
 
     const dropY = 160;
-    // Always show arrows around the selected drop option
-    const dropSpacing = 145;
-    this.drawSettingsButton(cx - dropSpacing, dropY, 'SPACE', 'red', state.dropKey === 'space', state.dropKey === 'space');
-    this.drawSettingsButton(cx, dropY, 'UP', 'green', state.dropKey === 'up', state.dropKey === 'up');
-    this.drawSettingsButton(cx + dropSpacing, dropY, 'DEFAULT', 'blue', state.dropKey === 'default', state.dropKey === 'default');
+    // Calculate button widths and center the group
+    const dropButtons = [
+      { text: 'SPACE', color: 'red' as const, key: 'space' as const },
+      { text: 'UP', color: 'green' as const, key: 'up' as const },
+      { text: 'DEFAULT', color: 'blue' as const, key: 'default' as const },
+    ];
+    const margin = 20;
+    const fontSize = 14;
+    const arrowSpace = 24;
+    const innerPadding = 16;
+
+    // Calculate each button's width
+    this.ctx.font = `${fontSize}px ${FONT}`;
+    const widths = dropButtons.map(b => this.ctx.measureText(b.text).width + (arrowSpace + innerPadding) * 2);
+    const totalWidth = widths.reduce((sum, w) => sum + w, 0) + margin * (widths.length - 1);
+
+    // Position buttons starting from the left edge of the group
+    let currentX = cx - totalWidth / 2;
+    for (let i = 0; i < dropButtons.length; i++) {
+      const btn = dropButtons[i];
+      const btnX = currentX + widths[i] / 2;
+      this.drawSettingsButton(btnX, dropY, btn.text, btn.color, state.dropKey === btn.key, state.dropKey === btn.key);
+      currentX += widths[i] + margin;
+    }
 
     // GHOST MODE section
     this.drawLabelBox(cx, 250, 230, 44, 'GHOST MODE', 'gold');

@@ -201,37 +201,12 @@ export class Renderer {
     }
   }
 
-  private startLines(game: Game): { text: string; size: number; gap: number }[] {
-    const cursor = (row: number) => (game.menuCursor === row ? '> ' : '  ');
-    const menuRows = game.menuRows().map((row, i) => {
-      switch (row) {
-        case 'mode': {
-          const mode = game.startMode === 'a' ? 'A-TYPE' : 'B-TYPE';
-          return { text: `${cursor(i)}MODE   < ${mode} >`, size: 12, gap: 14 };
-        }
-        case 'level': {
-          const lv = String(game.startLevel).padStart(2, '0');
-          return { text: `${cursor(i)}LEVEL  < ${lv} >`, size: 12, gap: 14 };
-        }
-        case 'height':
-          return { text: `${cursor(i)}HEIGHT < ${game.startHeight} >`, size: 12, gap: 14 };
-      }
-    });
-
-    const dropHint =
-      game.dropKey === 'space'
-        ? 'SPACE HARD DROP'
-        : game.dropKey === 'up'
-          ? 'UP    HARD DROP'
-          : 'DOWN  SOFT DROP';
+  private startLines(_game: Game): { text: string; size: number; gap: number }[] {
     return [
-      { text: 'TETRIS', size: 26, gap: 26 },
-      ...menuRows,
-      { text: 'ARROWS  SELECT', size: 9, gap: 10 },
-      { text: 'ENTER   START', size: 9, gap: 20 },
-      { text: dropHint, size: 9, gap: 10 },
-      { text: 'Z X ROTATE', size: 9, gap: 10 },
-      { text: 'P PAUSE  M SOUND', size: 9, gap: 0 },
+      { text: 'TETRIS', size: 26, gap: 50 },
+      { text: 'ENTER   START', size: 14, gap: 24 },
+      { text: 'Z X   ROTATE', size: 14, gap: 24 },
+      { text: 'P PAUSE  M SOUND', size: 14, gap: 0 },
     ];
   }
 }
