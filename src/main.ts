@@ -60,7 +60,7 @@ let bScores: HighScoreEntry[] = loadHighScores('b');
 
 function fit(): void {
   const scale = Math.min(window.innerWidth / 1006, window.innerHeight / 934);
-  el.frame.style.transform = `scale(${scale})`;
+  el.frame.style.transform = `translate(-50%, -50%) scale(${scale})`;
   syncWallScale(scale);
 
   // Scale menu canvas too
@@ -358,6 +358,67 @@ window.addEventListener('keydown', (e) => {
     return;
   }
 
+  // Handle pause menu
+  if (game.phase === 'paused') {
+    e.preventDefault();
+    switch (e.code) {
+      case 'ArrowUp':
+      case 'ArrowDown':
+        game.pauseSelection = game.pauseSelection === 'continue' ? 'quit' : 'continue';
+        audio.sfxMove();
+        break;
+      case 'Enter':
+      case 'Space':
+        if (game.pauseSelection === 'continue') {
+          game.togglePause();
+          audio.setPaused(false);
+        } else {
+          // Quit to main menu
+          audio.stopMusic();
+          game.phase = 'menu-type';
+          menuState.phase = 'type';
+          updateMenuVisibility();
+        }
+        audio.sfxRotate();
+        break;
+      case 'Escape':
+      case 'KeyP':
+        // Resume on ESC/P
+        game.togglePause();
+        audio.setPaused(false);
+        break;
+    }
+    return;
+  }
+
+  // Handle game over menu
+  if (game.phase === 'gameover') {
+    e.preventDefault();
+    switch (e.code) {
+      case 'ArrowUp':
+      case 'ArrowDown':
+        game.gameOverSelection = game.gameOverSelection === 'restart' ? 'quit' : 'restart';
+        audio.sfxMove();
+        break;
+      case 'Enter':
+      case 'Space':
+        if (game.gameOverSelection === 'restart') {
+          game.start();
+          if (game.musicType !== 0) {
+            audio.startMusic(game.musicType);
+          }
+        } else {
+          // Quit to main menu
+          game.phase = 'menu-type';
+          menuState.phase = 'type';
+          updateMenuVisibility();
+        }
+        audio.sfxRotate();
+        break;
+    }
+    return;
+  }
+
   switch (e.code) {
     case 'ArrowLeft':
       e.preventDefault();
@@ -401,7 +462,7 @@ window.addEventListener('keydown', (e) => {
         game.phase = 'menu-type';
         menuState.phase = 'type';
         updateMenuVisibility();
-      } else if (game.phase === 'start' || game.phase === 'gameover') {
+      } else if (game.phase === 'start') {
         game.start();
         if (game.musicType !== 0) {
           audio.startMusic(game.musicType);
@@ -410,8 +471,10 @@ window.addEventListener('keydown', (e) => {
       break;
     case 'KeyP':
     case 'Escape':
-      game.togglePause();
-      audio.setPaused(game.phase === 'paused');
+      if (game.phase === 'playing') {
+        game.togglePause();
+        audio.setPaused(true);
+      }
       break;
     case 'KeyM':
       audio.toggleMute();

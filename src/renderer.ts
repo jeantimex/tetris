@@ -91,7 +91,7 @@ export class Renderer {
     }
 
     if (game.phase === 'start') this.overlay(this.startLines(game));
-    else if (game.phase === 'paused') this.overlay([{ text: 'PAUSED', size: 24, gap: 0 }]);
+    else if (game.phase === 'paused') this.drawPauseMenu(game);
     else if (game.phase === 'win') {
       this.overlay([
         { text: 'B-TYPE', size: 22, gap: 16 },
@@ -99,10 +99,7 @@ export class Renderer {
         { text: 'PRESS ENTER', size: 13, gap: 0 },
       ]);
     } else if (game.phase === 'gameover') {
-      this.overlay([
-        { text: 'GAME OVER', size: 24, gap: 40 },
-        { text: 'PRESS ENTER', size: 13, gap: 0 },
-      ]);
+      this.drawGameOverMenu(game);
     }
   }
 
@@ -208,6 +205,80 @@ export class Renderer {
       { text: 'Z X   ROTATE', size: 14, gap: 24 },
       { text: 'P PAUSE  M SOUND', size: 14, gap: 0 },
     ];
+  }
+
+  private drawPauseMenu(game: Game): void {
+    const ctx = this.bctx;
+    const cx = BOARD_W / 2;
+    const cy = BOARD_H / 2;
+
+    // Background
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, cy - 100, BOARD_W, 200);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#f4f8f8';
+
+    // Title
+    ctx.font = `24px ${FONT}`;
+    ctx.fillText('PAUSED', cx, cy - 50);
+
+    // Options
+    const options: { text: string; key: 'continue' | 'quit' }[] = [
+      { text: 'CONTINUE', key: 'continue' },
+      { text: 'QUIT', key: 'quit' },
+    ];
+
+    ctx.font = `14px ${FONT}`;
+    options.forEach((opt, i) => {
+      const y = cy + 20 + i * 40;
+      const selected = game.pauseSelection === opt.key;
+      if (selected) {
+        ctx.fillStyle = '#f4f8f8';
+        ctx.fillText('>', cx - 80, y);
+        ctx.fillText('<', cx + 80, y);
+      }
+      ctx.fillStyle = selected ? '#f4f8f8' : '#888888';
+      ctx.fillText(opt.text, cx, y);
+    });
+  }
+
+  private drawGameOverMenu(game: Game): void {
+    const ctx = this.bctx;
+    const cx = BOARD_W / 2;
+    const cy = BOARD_H / 2;
+
+    // Background
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, cy - 100, BOARD_W, 200);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#f4f8f8';
+
+    // Title
+    ctx.font = `24px ${FONT}`;
+    ctx.fillText('GAME OVER', cx, cy - 50);
+
+    // Options
+    const options: { text: string; key: 'restart' | 'quit' }[] = [
+      { text: 'RESTART', key: 'restart' },
+      { text: 'QUIT', key: 'quit' },
+    ];
+
+    ctx.font = `14px ${FONT}`;
+    options.forEach((opt, i) => {
+      const y = cy + 20 + i * 40;
+      const selected = game.gameOverSelection === opt.key;
+      if (selected) {
+        ctx.fillStyle = '#f4f8f8';
+        ctx.fillText('>', cx - 80, y);
+        ctx.fillText('<', cx + 80, y);
+      }
+      ctx.fillStyle = selected ? '#f4f8f8' : '#888888';
+      ctx.fillText(opt.text, cx, y);
+    });
   }
 }
 

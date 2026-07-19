@@ -5,6 +5,8 @@ export const ROWS = 20;
 
 export type Cell = PieceType | 0;
 export type Phase = 'menu-type' | 'menu-level' | 'menu-settings' | 'start' | 'playing' | 'clearing' | 'paused' | 'gameover' | 'win';
+export type PauseOption = 'continue' | 'quit';
+export type GameOverOption = 'restart' | 'quit';
 export type GameMode = 'a' | 'b';
 export type GameEvent = 'move' | 'rotate' | 'lock' | 'clear' | 'levelup' | 'gameover' | 'win' | 'harddrop';
 
@@ -51,6 +53,8 @@ export class Game {
   menuCursor = 0;
   dropKey: 'space' | 'up' | 'default' = 'space';
   ghost = true;
+  pauseSelection: PauseOption = 'continue';
+  gameOverSelection: GameOverOption = 'restart';
   clearingRows: number[] = [];
   stats: Record<PieceType, number> = { I: 0, O: 0, T: 0, S: 0, Z: 0, J: 0, L: 0 };
 
@@ -118,8 +122,12 @@ export class Game {
   }
 
   togglePause(): void {
-    if (this.phase === 'playing') this.phase = 'paused';
-    else if (this.phase === 'paused') this.phase = 'playing';
+    if (this.phase === 'playing') {
+      this.phase = 'paused';
+      this.pauseSelection = 'continue';
+    } else if (this.phase === 'paused') {
+      this.phase = 'playing';
+    }
   }
 
   setSoftDrop(on: boolean): void {
@@ -306,6 +314,7 @@ export class Game {
     if (this.collides(type, 0, 3, 0)) {
       this.active = null;
       this.phase = 'gameover';
+      this.gameOverSelection = 'restart';
       if (this.score > this.top) {
         this.top = this.score;
         localStorage.setItem(TOP_KEY, String(this.top));

@@ -27,10 +27,12 @@ body {
 /* ---------- layout ---------- */
 
 .game-frame {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   background: transparent;
   padding: 7px;
-  transform-origin: center center;
 }
 
 .game {

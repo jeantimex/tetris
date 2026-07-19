@@ -459,13 +459,15 @@ export class MenuRenderer {
     const rows = 2;
     const gw = cols * cellSize;
     const gh = rows * cellSize;
+    // Display actual row counts that correspond to each HEIGHT index
+    const rowCounts = [0, 2, 4, 6, 8, 10];
 
     // Border - green when focused, blue when not
     ctx.strokeStyle = focused ? COLORS.green : COLORS.blue;
     ctx.lineWidth = 3;
     ctx.strokeRect(x - gw/2 - 4, y - gh/2 - 4, gw + 8, gh + 8);
 
-    // Cells (0-5)
+    // Cells (0-5) showing actual row counts
     for (let i = 0; i < 6; i++) {
       const col = i % cols;
       const row = Math.floor(i / cols);
@@ -483,7 +485,7 @@ export class MenuRenderer {
       ctx.font = `14px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(String(i), cx, cy);
+      ctx.fillText(String(rowCounts[i]), cx, cy);
     }
   }
 

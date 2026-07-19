@@ -113,6 +113,7 @@ export class AudioEngine {
   private startAt = 0;
   private schedTimer: number | null = null;
   private muted = false;
+  private intentionallyPaused = false;
 
   /** Create/resume the context. Must be called from a user gesture. */
   unlock(): void {
@@ -131,7 +132,7 @@ export class AudioEngine {
       const data = this.noiseBuf.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
     }
-    if (this.ctx.state === 'suspended') void this.ctx.resume();
+    if (this.ctx.state === 'suspended' && !this.intentionallyPaused) void this.ctx.resume();
   }
 
   startMusic(trackNum: 1 | 2 | 3 = 1): void {
@@ -163,6 +164,7 @@ export class AudioEngine {
 
   setPaused(paused: boolean): void {
     if (!this.ctx) return;
+    this.intentionallyPaused = paused;
     if (paused) void this.ctx.suspend();
     else void this.ctx.resume();
   }
