@@ -710,6 +710,90 @@ window.addEventListener('keyup', (e) => {
   }
 });
 
+/* ---------- touch/gesture handling for mobile ---------- */
+
+const boardCanvas = document.getElementById('board') as HTMLCanvasElement;
+
+let pointerStartX = 0;
+let pointerStartY = 0;
+let pointerStartTime = 0;
+let activePointerId: number | null = null;
+
+const SWIPE_THRESHOLD = 30; // minimum distance for swipe
+const TAP_THRESHOLD = 10; // max movement for tap
+const TAP_TIME_THRESHOLD = 300; // max time for tap in ms
+
+boardCanvas.addEventListener('pointerdown', (e) => {
+  if (game.phase !== 'playing') return;
+  if (activePointerId !== null) return; // already tracking a pointer
+
+  activePointerId = e.pointerId;
+  pointerStartX = e.clientX;
+  pointerStartY = e.clientY;
+  pointerStartTime = Date.now();
+
+  // Capture pointer to receive events even outside the element
+  boardCanvas.setPointerCapture(e.pointerId);
+
+  e.preventDefault();
+});
+
+boardCanvas.addEventListener('pointermove', (e) => {
+  if (activePointerId !== e.pointerId || game.phase !== 'playing') return;
+  e.preventDefault();
+});
+
+function handlePointerEnd(e: PointerEvent): void {
+  if (activePointerId !== e.pointerId) return;
+
+  const wasPlaying = game.phase === 'playing';
+  activePointerId = null;
+
+  // Release pointer capture
+  boardCanvas.releasePointerCapture(e.pointerId);
+
+  if (!wasPlaying) return;
+
+  const deltaX = e.clientX - pointerStartX;
+  const deltaY = e.clientY - pointerStartY;
+  const deltaTime = Date.now() - pointerStartTime;
+  const absX = Math.abs(deltaX);
+  const absY = Math.abs(deltaY);
+
+  // Check if it's a tap (small movement, short time)
+  if (absX < TAP_THRESHOLD && absY < TAP_THRESHOLD && deltaTime < TAP_TIME_THRESHOLD) {
+    // Tap to rotate
+    game.rotate(1);
+    return;
+  }
+
+  // Check for swipe
+  if (absX > SWIPE_THRESHOLD || absY > SWIPE_THRESHOLD) {
+    if (absX > absY) {
+      // Horizontal swipe
+      if (deltaX > 0) {
+        game.move(1); // swipe right
+      } else {
+        game.move(-1); // swipe left
+      }
+    } else {
+      // Vertical swipe
+      if (deltaY > 0 && game.dropKey !== 'default') {
+        // Swipe down - hard drop (only if drop mode is not default)
+        game.hardDrop();
+      }
+    }
+  }
+}
+
+boardCanvas.addEventListener('pointerup', handlePointerEnd);
+boardCanvas.addEventListener('pointercancel', handlePointerEnd);
+
+// Prevent context menu on long press
+boardCanvas.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+});
+
 /* ---------- HUD ---------- */
 
 const shown = { lines: '', top: '', score: '', level: '', stats: '', atype: '' };

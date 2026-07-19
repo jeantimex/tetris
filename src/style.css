@@ -247,6 +247,11 @@ canvas {
   image-rendering: pixelated;
 }
 
+#board {
+  touch-action: none;
+  cursor: pointer;
+}
+
 /* ---------- menu overlay ---------- */
 
 .menu-overlay {
