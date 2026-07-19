@@ -4,8 +4,14 @@ export const COLS = 10;
 export const ROWS = 20;
 
 export type Cell = PieceType | 0;
-export type Phase = 'start' | 'playing' | 'clearing' | 'paused' | 'gameover';
-export type GameEvent = 'move' | 'rotate' | 'lock' | 'clear' | 'levelup' | 'gameover';
+export type Phase = 'start' | 'playing' | 'clearing' | 'paused' | 'gameover' | 'win';
+export type GameMode = 'a' | 'b';
+export type GameEvent = 'move' | 'rotate' | 'lock' | 'clear' | 'levelup' | 'gameover' | 'win';
+
+/** B-Type: lines to clear to win. */
+export const B_TYPE_GOAL = 25;
+/** Garbage rows per HEIGHT setting (0-5). */
+const GARBAGE_ROWS = [0, 2, 4, 6, 8, 10];
 
 export interface ActivePiece {
   type: PieceType;
@@ -36,6 +42,10 @@ export class Game {
   lines = 0;
   level = 0;
   startLevel = 0;
+  startMode: GameMode = 'a';
+  startHeight = 0;
+  mode: GameMode = 'a';
+  menuCursor = 0;
   clearingRows: number[] = [];
   stats: Record<PieceType, number> = { I: 0, O: 0, T: 0, S: 0, Z: 0, J: 0, L: 0 };
 
@@ -43,6 +53,7 @@ export class Game {
   private gravityAcc = 0;
   private clearAcc = 0;
   private softDrop = false;
+  private pendingWin = false;
   private listeners: ((e: GameEvent, data: number) => void)[] = [];
 
   constructor() {
@@ -66,11 +77,14 @@ export class Game {
     this.resetBoard();
     this.score = 0;
     this.lines = 0;
+    this.mode = this.startMode;
     this.level = this.startLevel;
     this.prevType = null;
     this.clearingRows = [];
+    this.pendingWin = false;
     this.gravityAcc = 0;
     this.stats = { I: 0, O: 0, T: 0, S: 0, Z: 0, J: 0, L: 0 };
+    if (this.mode === 'b') this.generateGarbage();
     this.nextType = this.randomType();
     this.phase = 'playing';
     this.spawn();
@@ -98,8 +112,13 @@ export class Game {
       this.clearAcc += dtMs;
       if (this.clearAcc >= CLEAR_ANIM_MS) {
         this.collapseRows();
-        this.phase = 'playing';
-        this.spawn();
+        if (this.pendingWin) {
+          this.pendingWin = false;
+          this.win();
+        } else {
+          this.phase = 'playing';
+          this.spawn();
+        }
       }
     }
   }
@@ -152,12 +171,39 @@ export class Game {
       this.clearAcc = 0;
       this.lines += full.length;
       this.score += LINE_POINTS[full.length - 1] * (this.level + 1);
-      this.level = this.startLevel + Math.floor(this.lines / 10);
+      if (this.mode === 'a') {
+        this.level = this.startLevel + Math.floor(this.lines / 10);
+        if (this.level > prevLevel) this.emit('levelup', this.level);
+      }
+      if (this.mode === 'b' && this.lines >= B_TYPE_GOAL) this.pendingWin = true;
       this.phase = 'clearing';
       this.emit('clear', full.length);
-      if (this.level > prevLevel) this.emit('levelup', this.level);
     } else {
       this.spawn();
+    }
+  }
+
+  private win(): void {
+    this.phase = 'win';
+    if (this.score > this.top) {
+      this.top = this.score;
+      localStorage.setItem(TOP_KEY, String(this.top));
+    }
+    this.emit('win');
+  }
+
+  /** NES B-Type: random garbage rows at the bottom; every row gets at least one block and one hole. */
+  private generateGarbage(): void {
+    const rows = GARBAGE_ROWS[Math.min(this.startHeight, GARBAGE_ROWS.length - 1)];
+    for (let r = 0; r < rows; r++) {
+      const y = ROWS - 1 - r;
+      const row: Cell[] = Array.from({ length: COLS }, () =>
+        Math.random() < 0.5 ? TYPES[Math.floor(Math.random() * TYPES.length)] : 0,
+      );
+      const filled = row.filter((c) => c !== 0).length;
+      if (filled === 0) row[Math.floor(Math.random() * COLS)] = 'T';
+      if (filled === COLS) row[Math.floor(Math.random() * COLS)] = 0;
+      this.board[y] = row;
     }
   }
 

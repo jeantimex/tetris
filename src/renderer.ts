@@ -77,7 +77,13 @@ export class Renderer {
 
     if (game.phase === 'start') this.overlay(this.startLines(game));
     else if (game.phase === 'paused') this.overlay([{ text: 'PAUSED', size: 24, gap: 0 }]);
-    else if (game.phase === 'gameover') {
+    else if (game.phase === 'win') {
+      this.overlay([
+        { text: 'B-TYPE', size: 22, gap: 16 },
+        { text: 'COMPLETE!', size: 22, gap: 40 },
+        { text: 'PRESS ENTER', size: 13, gap: 0 },
+      ]);
+    } else if (game.phase === 'gameover') {
       this.overlay([
         { text: 'GAME OVER', size: 24, gap: 40 },
         { text: 'PRESS ENTER', size: 13, gap: 0 },
@@ -182,15 +188,23 @@ export class Renderer {
 
   private startLines(game: Game): { text: string; size: number; gap: number }[] {
     const lv = String(game.startLevel).padStart(2, '0');
-    return [
-      { text: 'TETRIS', size: 28, gap: 34 },
-      { text: 'PRESS ENTER', size: 13, gap: 30 },
-      { text: `LEVEL < ${lv} >`, size: 13, gap: 44 },
-      { text: 'ARROWS  MOVE', size: 10, gap: 14 },
-      { text: 'Z X     ROTATE', size: 10, gap: 14 },
-      { text: 'P       PAUSE', size: 10, gap: 14 },
-      { text: 'M       SOUND', size: 10, gap: 0 },
+    const cursor = (row: number) => (game.menuCursor === row ? '> ' : '  ');
+    const mode = game.startMode === 'a' ? 'A-TYPE' : 'B-TYPE';
+    const lines = [
+      { text: 'TETRIS', size: 26, gap: 30 },
+      { text: `${cursor(0)}MODE   < ${mode} >`, size: 12, gap: 14 },
+      { text: `${cursor(1)}LEVEL  < ${lv} >`, size: 12, gap: 14 },
     ];
+    if (game.startMode === 'b') {
+      lines.push({ text: `${cursor(2)}HEIGHT < ${game.startHeight} >`, size: 12, gap: 14 });
+    }
+    lines.push(
+      { text: 'ARROWS  SELECT', size: 9, gap: 12 },
+      { text: 'ENTER   START', size: 9, gap: 26 },
+      { text: 'Z X ROTATE', size: 9, gap: 12 },
+      { text: 'P PAUSE  M SOUND', size: 9, gap: 0 },
+    );
+    return lines;
   }
 }
 

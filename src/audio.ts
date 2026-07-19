@@ -240,6 +240,12 @@ export class AudioEngine {
     });
   }
 
+  sfxWin(): void {
+    [72, 76, 79, 84, 88, 91].forEach((m, i) => {
+      this.blip(midiToFreq(m), 0.11, 'square', 0.4, undefined, i * 0.09);
+    });
+  }
+
   sfxGameOver(): void {
     this.blip(380, 0.9, 'square', 0.45, 55);
   }

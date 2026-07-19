@@ -1,5 +1,5 @@
 import './style.css';
-import { Game } from './game';
+import { B_TYPE_GOAL, Game } from './game';
 import { Renderer } from './renderer';
 import { TYPES, type PieceType } from './pieces';
 import { AudioEngine } from './audio';
@@ -22,6 +22,7 @@ const el = {
   score: document.getElementById('score')!,
   level: document.getElementById('level')!,
   frame: document.getElementById('game-frame')!,
+  atype: document.getElementById('atype')!,
   stats: new Map<PieceType, HTMLElement>(
     TYPES.map((t) => [t, document.getElementById(`stat-${t}`)!]),
   ),
@@ -81,6 +82,28 @@ function onDirUp(dir: -1 | 1): void {
   }
 }
 
+/* ---------- start-screen menu ---------- */
+
+function menuRowCount(): number {
+  return game.startMode === 'b' ? 3 : 2;
+}
+
+function moveMenuCursor(dir: -1 | 1): void {
+  const rows = menuRowCount();
+  game.menuCursor = (game.menuCursor + dir + rows) % rows;
+}
+
+function changeMenuValue(dir: -1 | 1): void {
+  if (game.menuCursor === 0) {
+    game.startMode = game.startMode === 'a' ? 'b' : 'a';
+    if (game.menuCursor >= menuRowCount()) game.menuCursor = menuRowCount() - 1;
+  } else if (game.menuCursor === 1) {
+    game.startLevel = Math.min(19, Math.max(0, game.startLevel + dir));
+  } else {
+    game.startHeight = Math.min(5, Math.max(0, game.startHeight + dir));
+  }
+}
+
 /* ---------- audio ---------- */
 
 const audio = new AudioEngine();
@@ -107,6 +130,10 @@ game.on((e, data) => {
       audio.stopMusic();
       audio.sfxGameOver();
       break;
+    case 'win':
+      audio.stopMusic();
+      audio.sfxWin();
+      break;
   }
 });
 
@@ -119,19 +146,24 @@ window.addEventListener('keydown', (e) => {
   switch (e.code) {
     case 'ArrowLeft':
       e.preventDefault();
-      if (game.phase === 'start') game.startLevel = Math.max(0, game.startLevel - 1);
+      if (game.phase === 'start') changeMenuValue(-1);
       else onDirDown(-1);
       break;
     case 'ArrowRight':
       e.preventDefault();
-      if (game.phase === 'start') game.startLevel = Math.min(19, game.startLevel + 1);
+      if (game.phase === 'start') changeMenuValue(1);
       else onDirDown(1);
       break;
     case 'ArrowDown':
       e.preventDefault();
-      game.setSoftDrop(true);
+      if (game.phase === 'start') moveMenuCursor(1);
+      else game.setSoftDrop(true);
       break;
     case 'ArrowUp':
+      e.preventDefault();
+      if (game.phase === 'start') moveMenuCursor(-1);
+      else game.rotate(1);
+      break;
     case 'KeyX':
       e.preventDefault();
       game.rotate(1);
@@ -140,7 +172,9 @@ window.addEventListener('keydown', (e) => {
       game.rotate(-1);
       break;
     case 'Enter':
-      if (game.phase === 'start' || game.phase === 'gameover') {
+      if (game.phase === 'win') {
+        game.phase = 'start';
+      } else if (game.phase === 'start' || game.phase === 'gameover') {
         game.start();
         audio.startMusic();
       }
@@ -172,19 +206,29 @@ window.addEventListener('keyup', (e) => {
 
 /* ---------- HUD ---------- */
 
-const shown = { lines: '', top: '', score: '', level: '', stats: '' };
+const shown = { lines: '', top: '', score: '', level: '', stats: '', atype: '' };
 let iconLevel = -1;
 
 function updateHud(): void {
-  const lines = String(game.lines).padStart(3, '0');
+  const linesValue =
+    game.phase === 'start'
+      ? game.startMode === 'b'
+        ? B_TYPE_GOAL
+        : 0
+      : game.mode === 'b'
+        ? Math.max(0, B_TYPE_GOAL - game.lines)
+        : game.lines;
+  const lines = String(linesValue).padStart(3, '0');
   const top = String(Math.max(game.top, game.score)).padStart(6, '0');
   const score = String(game.score).padStart(6, '0');
   const level = String(game.phase === 'start' ? game.startLevel : game.level).padStart(2, '0');
+  const atype = game.startMode === 'b' ? 'B-TYPE' : 'A-TYPE';
   const stats = TYPES.map((t) => Math.min(999, game.stats[t]).toString().padStart(3, '0'));
   if (lines !== shown.lines) el.lines.textContent = lines;
   if (top !== shown.top) el.top.textContent = top;
   if (score !== shown.score) el.score.textContent = score;
   if (level !== shown.level) el.level.textContent = level;
+  if (atype !== shown.atype) el.atype.textContent = atype;
   const statsKey = stats.join();
   if (statsKey !== shown.stats) {
     TYPES.forEach((t, i) => {
@@ -196,6 +240,7 @@ function updateHud(): void {
   shown.score = score;
   shown.level = level;
   shown.stats = statsKey;
+  shown.atype = atype;
 
   // statistics icons follow the level palette
   if (game.level !== iconLevel) {
