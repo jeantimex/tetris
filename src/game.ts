@@ -90,6 +90,16 @@ export class Game {
     return rows;
   }
 
+  /** Prepare for a new game - clears board and resets stats for display. */
+  prepareNewGame(): void {
+    this.resetBoard();
+    this.active = null;
+    this.score = 0;
+    this.lines = 0;
+    this.stats = { I: 0, O: 0, T: 0, S: 0, Z: 0, J: 0, L: 0 };
+    this.clearingRows = [];
+  }
+
   on(fn: (e: GameEvent, data: number) => void): void {
     this.listeners.push(fn);
   }
