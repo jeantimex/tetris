@@ -4,7 +4,7 @@ export const COLS = 10;
 export const ROWS = 20;
 
 export type Cell = PieceType | 0;
-export type Phase = 'menu-type' | 'menu-level' | 'menu-settings' | 'start' | 'playing' | 'clearing' | 'paused' | 'gameover' | 'win';
+export type Phase = 'menu-type' | 'menu-level' | 'menu-settings' | 'start' | 'playing' | 'clearing' | 'paused' | 'gameover' | 'win' | 'enter-name';
 export type PauseOption = 'continue' | 'quit';
 export type GameOverOption = 'restart' | 'quit';
 export type GameMode = 'a' | 'b';
@@ -55,6 +55,7 @@ export class Game {
   ghost = true;
   pauseSelection: PauseOption = 'continue';
   gameOverSelection: GameOverOption = 'restart';
+  enteredName = '';
   clearingRows: number[] = [];
   stats: Record<PieceType, number> = { I: 0, O: 0, T: 0, S: 0, Z: 0, J: 0, L: 0 };
 

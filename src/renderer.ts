@@ -100,6 +100,8 @@ export class Renderer {
       ]);
     } else if (game.phase === 'gameover') {
       this.drawGameOverMenu(game);
+    } else if (game.phase === 'enter-name') {
+      this.drawNameEntry(game);
     }
   }
 
@@ -279,6 +281,41 @@ export class Renderer {
       ctx.fillStyle = selected ? '#f4f8f8' : '#888888';
       ctx.fillText(opt.text, cx, y);
     });
+  }
+
+  private drawNameEntry(game: Game): void {
+    const ctx = this.bctx;
+    const cx = BOARD_W / 2;
+    const cy = BOARD_H / 2;
+
+    // Background
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, cy - 120, BOARD_W, 240);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#f4f8f8';
+
+    // Title
+    ctx.font = `18px ${FONT}`;
+    ctx.fillText('HIGH SCORE!', cx, cy - 80);
+
+    // Score display
+    ctx.font = `14px ${FONT}`;
+    ctx.fillText(`SCORE: ${String(game.score).padStart(6, '0')}`, cx, cy - 40);
+
+    // Name entry prompt
+    ctx.fillText('ENTER YOUR NAME', cx, cy);
+
+    // Name input box
+    const name = game.enteredName.padEnd(6, '_');
+    ctx.font = `20px ${FONT}`;
+    ctx.fillText(name, cx, cy + 50);
+
+    // Instructions
+    ctx.font = `10px ${FONT}`;
+    ctx.fillStyle = '#888888';
+    ctx.fillText('ENTER TO CONFIRM', cx, cy + 100);
   }
 }
 

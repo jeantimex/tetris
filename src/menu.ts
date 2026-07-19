@@ -541,17 +541,9 @@ export class MenuRenderer {
 const A_SCORES_KEY = 'tetris-a-scores';
 const B_SCORES_KEY = 'tetris-b-scores';
 
-const DEFAULT_A_SCORES: HighScoreEntry[] = [
-  { name: 'HOWARD', score: 10000, level: 9 },
-  { name: 'OTASAN', score: 7500, level: 5 },
-  { name: 'LANCE', score: 5000, level: 0 },
-];
+const DEFAULT_A_SCORES: HighScoreEntry[] = [];
 
-const DEFAULT_B_SCORES: HighScoreEntry[] = [
-  { name: 'ALEX', score: 2000, level: 9 },
-  { name: 'TONY', score: 1000, level: 5 },
-  { name: 'NINTEN', score: 500, level: 0 },
-];
+const DEFAULT_B_SCORES: HighScoreEntry[] = [];
 
 export function loadHighScores(type: 'a' | 'b'): HighScoreEntry[] {
   const key = type === 'a' ? A_SCORES_KEY : B_SCORES_KEY;
@@ -568,4 +560,18 @@ export function loadHighScores(type: 'a' | 'b'): HighScoreEntry[] {
 export function saveHighScores(type: 'a' | 'b', scores: HighScoreEntry[]): void {
   const key = type === 'a' ? A_SCORES_KEY : B_SCORES_KEY;
   localStorage.setItem(key, JSON.stringify(scores.slice(0, 3)));
+}
+
+export function isHighScore(type: 'a' | 'b', score: number): boolean {
+  if (score <= 0) return false;
+  const scores = loadHighScores(type);
+  if (scores.length < 3) return true;
+  return score > scores[scores.length - 1].score;
+}
+
+export function addHighScore(type: 'a' | 'b', entry: HighScoreEntry): void {
+  const scores = loadHighScores(type);
+  scores.push(entry);
+  scores.sort((a, b) => b.score - a.score);
+  saveHighScores(type, scores.slice(0, 3));
 }

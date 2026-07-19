@@ -4,7 +4,7 @@ import { Renderer } from './renderer';
 import { TYPES, type PieceType } from './pieces';
 import { AudioEngine } from './audio';
 import { applyWall, syncWallScale } from './wall';
-import { MenuRenderer, loadHighScores, type MenuState, type MusicType, type HighScoreEntry } from './menu';
+import { MenuRenderer, loadHighScores, isHighScore, addHighScore, type MenuState, type MusicType, type HighScoreEntry } from './menu';
 
 const statCanvases = new Map<PieceType, HTMLCanvasElement>();
 for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas[data-piece]')) {
@@ -325,10 +325,20 @@ game.on((e, data) => {
     case 'gameover':
       audio.stopMusic();
       audio.sfxGameOver();
+      // Check for high score
+      if (isHighScore(game.mode, game.score)) {
+        game.enteredName = '';
+        game.phase = 'enter-name';
+      }
       break;
     case 'win':
       audio.stopMusic();
       audio.sfxWin();
+      // Check for high score
+      if (isHighScore(game.mode, game.score)) {
+        game.enteredName = '';
+        game.phase = 'enter-name';
+      }
       break;
   }
 });
@@ -375,6 +385,7 @@ window.addEventListener('keydown', (e) => {
           audio.setPaused(false);
         } else {
           // Quit to main menu
+          audio.setPaused(false); // Reset audio state before stopping
           audio.stopMusic();
           game.phase = 'menu-type';
           menuState.phase = 'type';
@@ -410,12 +421,53 @@ window.addEventListener('keydown', (e) => {
           }
         } else {
           // Quit to main menu
+          audio.setPaused(false); // Ensure audio state is reset
           game.phase = 'menu-type';
           menuState.phase = 'type';
           updateMenuVisibility();
         }
         audio.sfxRotate();
         break;
+    }
+    return;
+  }
+
+  // Handle name entry
+  if (game.phase === 'enter-name') {
+    e.preventDefault();
+    if (e.code === 'Enter') {
+      // Save score if name was entered
+      if (game.enteredName.length > 0) {
+        addHighScore(game.mode, {
+          name: game.enteredName,
+          score: game.score,
+          level: game.level,
+        });
+        // Reload scores
+        if (game.mode === 'a') {
+          aScores = loadHighScores('a');
+        } else {
+          bScores = loadHighScores('b');
+        }
+      }
+      // Go to game over menu
+      game.phase = 'gameover';
+      game.gameOverSelection = 'restart';
+      audio.sfxRotate();
+    } else if (e.code === 'Backspace') {
+      // Delete last character
+      if (game.enteredName.length > 0) {
+        game.enteredName = game.enteredName.slice(0, -1);
+        audio.sfxMove();
+      }
+    } else if (e.code === 'Escape') {
+      // Skip name entry
+      game.phase = 'gameover';
+      game.gameOverSelection = 'restart';
+    } else if (e.key.length === 1 && /[A-Za-z0-9]/.test(e.key) && game.enteredName.length < 6) {
+      // Add character (letters and numbers only)
+      game.enteredName += e.key.toUpperCase();
+      audio.sfxMove();
     }
     return;
   }
