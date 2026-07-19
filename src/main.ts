@@ -67,12 +67,20 @@ let bScores: HighScoreEntry[] = loadHighScores('b');
 let menuScale = 1;
 
 function fit(): void {
-  const scale = Math.min(window.innerWidth / 1006, window.innerHeight / 934);
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  // Determine game dimensions based on whether stats are hidden
+  const isMobile = vw <= 800;
+  const gameWidth = isMobile ? 682 : 1006; // 668 + padding
+  const gameHeight = 934;
+
+  const scale = Math.min(vw / gameWidth, vh / gameHeight);
   el.frame.style.transform = `translate(-50%, -50%) scale(${scale})`;
   syncWallScale(scale);
 
   // Scale menu canvas to fill available space
-  menuScale = Math.min(window.innerWidth / 520, window.innerHeight / 490);
+  menuScale = Math.min(vw / 520, vh / 490);
   menuCanvas.style.transform = `scale(${menuScale})`;
   menuRenderer.setScale(menuScale);
 }

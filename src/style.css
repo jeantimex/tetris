@@ -31,6 +31,7 @@ body {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+  transform-origin: center center;
   background: transparent;
   padding: 7px;
 }
@@ -374,4 +375,83 @@ canvas {
 
 .game-btn.hidden {
   display: none;
+}
+
+/* ---------- responsive design for mobile ---------- */
+
+@media (max-width: 800px) {
+  /* Hide statistics panel on smaller screens */
+  .col-stats {
+    display: none;
+  }
+
+  /* Adjust game container - use flexbox for centering */
+  .game {
+    width: 668px;
+    display: flex;
+    flex-direction: row;
+  }
+
+  /* Info panel on left - narrower */
+  .col-right {
+    position: relative;
+    left: auto;
+    top: auto;
+    order: 1;
+    width: 230px;
+    height: 920px;
+    flex-shrink: 0;
+  }
+
+  /* Make score panel same width as next panel */
+  .col-right .frame--top {
+    width: 220px;
+    height: 240px;
+  }
+
+  .col-right .frame--top .frame__inner {
+    font-size: 24px;
+    line-height: 1.3;
+    padding-left: 12px;
+  }
+
+  .col-right .frame--top .v-gap {
+    height: 20px;
+  }
+
+  /* Adjust next panel position */
+  .col-right .frame--next {
+    top: 260px;
+  }
+
+  /* Adjust level panel position */
+  .col-right .frame--level {
+    top: 570px;
+  }
+
+  /* Playfield on right */
+  .col-left {
+    position: relative;
+    left: auto;
+    top: auto;
+    order: 2;
+    width: 428px;
+    height: 920px;
+    flex-shrink: 0;
+    margin-left: 10px;
+  }
+
+  /* Reposition game controls below level panel */
+  .game-controls {
+    left: 0;
+    top: 710px;
+    width: 230px;
+  }
+
+  /* Make buttons bigger */
+  .game-btn {
+    font-size: 16px;
+    padding: 16px 30px;
+    min-width: 180px;
+  }
 }
