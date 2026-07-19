@@ -5,6 +5,7 @@ import { TYPES, type PieceType } from './pieces';
 import { AudioEngine } from './audio';
 import { applyWall, syncWallScale } from './wall';
 import { MenuRenderer, loadHighScores, isHighScore, addHighScore, type MenuState, type MusicType, type HighScoreEntry } from './menu';
+import { initFrames } from './frame';
 
 const statCanvases = new Map<PieceType, HTMLCanvasElement>();
 for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas[data-piece]')) {
@@ -69,6 +70,7 @@ function fit(): void {
 }
 window.addEventListener('resize', fit);
 applyWall();
+initFrames();
 fit();
 
 /* ---------- menu visibility ---------- */

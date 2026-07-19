@@ -70,34 +70,13 @@ body {
   height: 920px;
 }
 
-/* ---------- A-TYPE label + statistics panel ---------- */
-
-.atype-box {
-  left: 0;
-  top: 0;
-  width: 250px;
-  height: 103px;
-}
+/* ---------- Statistics panel content ---------- */
 
 .atype-inner {
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
-}
-
-.stats-box {
-  left: 0;
-  top: 113px;
-  width: 250px;
-  height: 690px;
-}
-
-.stats-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 12px 12px 18px;
 }
 
 .stats-title {
@@ -120,36 +99,69 @@ body {
   color: #a02830;
 }
 
-/* ---------- stat boxes (double white border in gray band) ---------- */
+/* ---------- Frame base class ---------- */
 
-.stat-box {
+.frame {
+  --frame-border-color: #68c0b8;
+  --frame-border-width: 3px;
+  --frame-corner-size: 6;
   position: absolute;
-  background: linear-gradient(135deg, #6a686e 0%, #5f5d62 45%, #38363c 100%);
-  padding: 7px;
   box-sizing: border-box;
 }
 
-.stat-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  background: #000;
-  border: 2px solid #e8ecec;
-  box-shadow:
-    inset 0 0 0 9px #000,
-    inset 0 0 0 11px #e8ecec;
-  padding: 16px 20px;
+.frame__canvas {
+  display: block;
+  image-rendering: pixelated;
 }
 
-.lines-box {
+.frame__inner {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  right: 14px;
+  bottom: 14px;
+  box-sizing: border-box;
+}
+
+/* Frame variant: simple (single colored border) */
+.frame--simple .frame__inner {
+  padding: 4px 8px;
+}
+
+/* Frame variant: bevel (cyan gradient border) - drawn by canvas */
+.frame--bevel .frame__inner {
+  left: 28px;
+  top: 28px;
+  right: 28px;
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Specific frame instances ---------- */
+
+.frame--atype {
+  left: 0;
+  top: 0;
+  width: 250px;
+  height: 103px;
+}
+
+.frame--atype .frame__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.frame--lines {
   left: 0;
   top: 0;
   width: 428px;
   height: 103px;
 }
 
-.lines-inner {
+.frame--lines .frame__inner {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,34 +169,34 @@ body {
   letter-spacing: 2px;
 }
 
-.top-box {
+.frame--top {
   left: 0;
   top: 0;
   width: 294px;
   height: 316px;
 }
 
-.top-inner {
+.frame--top .frame__inner {
   display: flex;
   flex-direction: column;
   justify-content: center;
   font-size: 30px;
   line-height: 1.35;
-  padding-left: 26px;
+  padding-left: 16px;
 }
 
-.top-inner .v-gap {
+.frame--top .v-gap {
   height: 30px;
 }
 
-.level-box {
+.frame--level {
   left: 0;
   top: 650px;
   width: 220px;
   height: 122px;
 }
 
-.level-inner {
+.frame--level .frame__inner {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -193,62 +205,40 @@ body {
   font-size: 30px;
 }
 
-/* ---------- beveled cyan frames ---------- */
-
-.bevel-frame {
-  position: absolute;
-  background: linear-gradient(135deg, #6a686e 0%, #5f5d62 45%, #38363c 100%);
-  padding: 7px;
-  box-sizing: border-box;
+.frame--stats {
+  left: 0;
+  top: 113px;
+  width: 250px;
+  height: 580px;
 }
 
-.bevel-gap {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  background: #000;
-  padding: 4px;
-}
-
-.bevel-cyan {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  background: linear-gradient(135deg, #d6faf9 0%, #c8eeeb 30%, #a8d0cc 62%, #88a09c 100%);
-  padding: 13px;
-}
-
-.bevel-core {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  background: #000;
+.frame--stats .frame__inner {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 2px 2px 8px;
 }
 
-.playfield-frame {
+.frame--playfield {
   left: 0;
   top: 110px;
   width: 428px;
   height: 808px;
 }
 
-.next-frame {
+.frame--next {
   left: 0;
   top: 338px;
   width: 220px;
   height: 290px;
 }
 
-.next-core {
+.frame--next .frame__inner {
   flex-direction: column;
   gap: 18px;
 }
 
-.next-label {
+.frame--next .frame__label {
   font-size: 26px;
 }
 
@@ -256,28 +246,6 @@ canvas {
   display: block;
   image-rendering: pixelated;
 }
-
-/* ---------- corner brackets ---------- */
-
-.corner {
-  position: absolute;
-  width: 26px;
-  height: 26px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Cpath d='M26 5 L5 5 L5 26' fill='none' stroke='%232a2a2e' stroke-width='9'/%3E%3Cpath d='M26 5 L5 5 L5 26' fill='none' stroke='%235f5d62' stroke-width='5'/%3E%3Cpath d='M24 3.5 L3.5 3.5 L3.5 24' fill='none' stroke='%2388858c' stroke-width='1.5'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.corner.tl { left: -5px; top: -5px; }
-.corner.tr { right: -5px; top: -5px; transform: rotate(90deg); }
-.corner.br { right: -5px; bottom: -5px; transform: rotate(180deg); }
-.corner.bl { left: -5px; bottom: -5px; transform: rotate(270deg); }
-
-.corner.screen.tl { left: 0; top: 0; }
-.corner.screen.tr { right: 0; top: 0; }
-.corner.screen.br { right: 0; bottom: 0; }
-.corner.screen.bl { left: 0; bottom: 0; }
 
 /* ---------- menu overlay ---------- */
 

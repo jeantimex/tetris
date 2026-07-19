@@ -267,21 +267,71 @@ export class MenuRenderer {
     ctx.font = `${fontSize}px ${FONT}`;
     const textWidth = ctx.measureText(text).width;
     const w = textWidth + (arrowSpace + innerPadding) * 2;
-    const h = 44;
+    const h = 48;
     const colors = this.getColorSet(color);
+    const cornerSize = 10;
+    const borderWidth = 3;
+    const frameInset = 4; // How far the frame is inset from the black background
 
-    // Border
-    ctx.strokeStyle = colors.dark;
-    ctx.lineWidth = 4;
-    ctx.strokeRect(x - w/2, y - h/2, w, h);
-
-    ctx.strokeStyle = colors.main;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x - w/2 + 4, y - h/2 + 4, w - 8, h - 8);
-
-    // Fill
+    // Fill black background (larger, extends beyond frame)
     ctx.fillStyle = COLORS.black;
-    ctx.fillRect(x - w/2 + 6, y - h/2 + 6, w - 12, h - 12);
+    ctx.fillRect(x - w/2 - frameInset, y - h/2 - frameInset, w + frameInset * 2, h + frameInset * 2);
+
+    // Draw colored border lines
+    ctx.strokeStyle = colors.main;
+    ctx.lineWidth = borderWidth;
+
+    // Top line
+    ctx.beginPath();
+    ctx.moveTo(x - w/2 + cornerSize, y - h/2 + borderWidth/2);
+    ctx.lineTo(x + w/2 - cornerSize, y - h/2 + borderWidth/2);
+    ctx.stroke();
+
+    // Bottom line
+    ctx.beginPath();
+    ctx.moveTo(x - w/2 + cornerSize, y + h/2 - borderWidth/2);
+    ctx.lineTo(x + w/2 - cornerSize, y + h/2 - borderWidth/2);
+    ctx.stroke();
+
+    // Left line
+    ctx.beginPath();
+    ctx.moveTo(x - w/2 + borderWidth/2, y - h/2 + cornerSize);
+    ctx.lineTo(x - w/2 + borderWidth/2, y + h/2 - cornerSize);
+    ctx.stroke();
+
+    // Right line
+    ctx.beginPath();
+    ctx.moveTo(x + w/2 - borderWidth/2, y - h/2 + cornerSize);
+    ctx.lineTo(x + w/2 - borderWidth/2, y + h/2 - cornerSize);
+    ctx.stroke();
+
+    // Draw corner decorations with highlight
+    const cs = cornerSize;
+    const hl = 4; // highlight size
+
+    // Top-left corner
+    ctx.fillStyle = colors.main;
+    ctx.fillRect(x - w/2, y - h/2, cs, cs);
+    ctx.fillStyle = colors.light;
+    ctx.fillRect(x - w/2 + 2, y - h/2 + 2, hl, hl);
+
+    // Top-right corner
+    ctx.fillStyle = colors.main;
+    ctx.fillRect(x + w/2 - cs, y - h/2, cs, cs);
+    ctx.fillStyle = colors.light;
+    ctx.fillRect(x + w/2 - cs + 2, y - h/2 + 2, hl, hl);
+
+    // Bottom-left corner
+    ctx.fillStyle = colors.main;
+    ctx.fillRect(x - w/2, y + h/2 - cs, cs, cs);
+    ctx.fillStyle = colors.light;
+    ctx.fillRect(x - w/2 + 2, y + h/2 - cs + 2, hl, hl);
+
+    // Bottom-right corner
+    ctx.fillStyle = colors.main;
+    ctx.fillRect(x + w/2 - cs, y + h/2 - cs, cs, cs);
+    ctx.fillStyle = colors.light;
+    ctx.fillRect(x + w/2 - cs + 2, y + h/2 - cs + 2, hl, hl);
 
     // Text with color matching the border
     ctx.fillStyle = colors.light;

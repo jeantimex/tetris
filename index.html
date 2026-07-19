@@ -13,11 +13,11 @@
     <div class="game-frame" id="game-frame">
       <div class="game" id="game">
         <div class="col-stats">
-          <div class="stat-box atype-box">
-            <div class="stat-inner atype-inner" id="atype">A-TYPE</div>
+          <div class="frame frame--simple frame--atype">
+            <div class="frame__inner atype-inner" id="atype">A-TYPE</div>
           </div>
-          <div class="stat-box stats-box">
-            <div class="stat-inner stats-inner">
+          <div class="frame frame--simple frame--stats">
+            <div class="frame__inner">
               <div class="stats-title">STATISTICS</div>
               <div class="stats-row"><canvas data-piece="T" width="82" height="42"></canvas><span id="stat-T">000</span></div>
               <div class="stats-row"><canvas data-piece="J" width="82" height="42"></canvas><span id="stat-J">000</span></div>
@@ -30,23 +30,18 @@
           </div>
         </div>
         <div class="col-left">
-          <div class="stat-box lines-box">
-            <div class="stat-inner lines-inner">LINES-<span id="lines">000</span></div>
+          <div class="frame frame--simple frame--lines">
+            <div class="frame__inner">LINES-<span id="lines">000</span></div>
           </div>
-          <div class="bevel-frame playfield-frame">
-            <div class="bevel-gap">
-              <div class="bevel-cyan">
-                <div class="bevel-core">
-                  <canvas id="board" width="380" height="760"></canvas>
-                </div>
-              </div>
+          <div class="frame frame--bevel frame--playfield">
+            <div class="frame__inner">
+              <canvas id="board" width="380" height="760"></canvas>
             </div>
-            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
           </div>
         </div>
         <div class="col-right">
-          <div class="stat-box top-box">
-            <div class="stat-inner top-inner">
+          <div class="frame frame--simple frame--top">
+            <div class="frame__inner">
               <div>TOP</div>
               <div id="top">000000</div>
               <div class="v-gap"></div>
@@ -54,27 +49,20 @@
               <div id="score">000000</div>
             </div>
           </div>
-          <div class="bevel-frame next-frame">
-            <div class="bevel-gap">
-              <div class="bevel-cyan">
-                <div class="bevel-core next-core">
-                  <div class="next-label">NEXT</div>
-                  <canvas id="next" width="172" height="160"></canvas>
-                </div>
-              </div>
+          <div class="frame frame--bevel frame--next">
+            <div class="frame__inner">
+              <div class="frame__label">NEXT</div>
+              <canvas id="next" width="172" height="160"></canvas>
             </div>
-            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
           </div>
-          <div class="stat-box level-box">
-            <div class="stat-inner level-inner">
+          <div class="frame frame--simple frame--level">
+            <div class="frame__inner">
               <div>LEVEL</div>
               <div id="level">00</div>
             </div>
           </div>
         </div>
       </div>
-      <i class="corner screen tl"></i><i class="corner screen tr"></i>
-      <i class="corner screen bl"></i><i class="corner screen br"></i>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
