@@ -81,10 +81,10 @@ export class AudioEngine {
       this.master = this.ctx.createGain();
       this.master.connect(this.ctx.destination);
       this.musicBus = this.ctx.createGain();
-      this.musicBus.gain.value = 0.14;
+      this.musicBus.gain.value = 0.12;
       this.musicBus.connect(this.master);
       this.sfxBus = this.ctx.createGain();
-      this.sfxBus.gain.value = 0.3;
+      this.sfxBus.gain.value = 0.45;
       this.sfxBus.connect(this.master);
 
       this.noiseBuf = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.25, this.ctx.sampleRate);
@@ -99,7 +99,7 @@ export class AudioEngine {
     this.stopMusic(0);
     const now = this.ctx.currentTime;
     this.musicBus.gain.cancelScheduledValues(now);
-    this.musicBus.gain.setValueAtTime(0.14, now);
+    this.musicBus.gain.setValueAtTime(0.12, now);
     this.evIdx = 0;
     this.loopCount = 0;
     this.startAt = now + 0.06;
@@ -214,23 +214,48 @@ export class AudioEngine {
   }
 
   sfxMove(): void {
-    this.blip(160, 0.035, 'square', 0.35);
+    this.blip(200, 0.05, 'square', 0.5);
   }
 
   sfxRotate(): void {
-    this.blip(260, 0.05, 'square', 0.35);
+    this.blip(320, 0.07, 'square', 0.5);
   }
 
   sfxLock(): void {
-    this.blip(110, 0.07, 'triangle', 0.6);
+    this.blip(130, 0.1, 'triangle', 0.8);
+  }
+
+  sfxHardDrop(): void {
+    this.noiseBurst(0.08, 0.5);
+    this.blip(90, 0.12, 'triangle', 0.9);
+  }
+
+  /** Short filtered noise hit (hard drop slam). */
+  private noiseBurst(dur: number, vol: number): void {
+    if (!this.ctx || !this.sfxBus || !this.noiseBuf) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 2500;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src.connect(filter);
+    filter.connect(g);
+    g.connect(this.sfxBus);
+    src.start(t);
+    src.stop(t + dur + 0.02);
   }
 
   sfxClear(lines: number): void {
     if (lines >= 4) {
-      this.blip(300, 0.16, 'square', 0.45, 1200);
-      this.blip(420, 0.22, 'square', 0.45, 1700, 0.12);
+      this.blip(300, 0.18, 'square', 0.55, 1200);
+      this.blip(420, 0.26, 'square', 0.55, 1700, 0.13);
     } else {
-      this.blip(320, 0.15, 'square', 0.4, 900);
+      this.blip(320, 0.18, 'square', 0.5, 900);
     }
   }
 

@@ -6,10 +6,6 @@
   font-display: block;
 }
 
-:root {
-  --wall-tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cg fill='%23565656' stroke='%233a3a3a' stroke-width='3'%3E%3Cpath d='M42 14h28v28h-28zM14 42h28v28H14zM42 42h28v28H42zM70 42h28v28H70z'/%3E%3Cpath d='M196 14h28v28h-28zM224 14h28v28h-28zM168 42h28v28h-28zM196 42h28v28h-28z'/%3E%3Cpath d='M224 98h28v28h-28zM252 98h28v28h-28zM224 126h28v28h-28zM252 126h28v28h-28z'/%3E%3Cpath d='M14 154h28v28H14zM14 182h28v28H14zM42 182h28v28H42zM70 182h28v28H70z'/%3E%3Cpath d='M112 210h28v28h-28zM140 210h28v28h-28zM140 238h28v28h-28zM168 238h28v28h-28z'/%3E%3Cpath d='M-14 98h28v28h-28zM-14 126h28v28h-28zM-14 154h28v28h-28zM14 154h28v28H14z'/%3E%3Cpath d='M84 266h28v28H84zM112 266h28v28h-28zM140 266h28v28h-28zM168 266h28v28h-28z'/%3E%3C/g%3E%3C/svg%3E");
-}
-
 html,
 body {
   margin: 0;
@@ -26,7 +22,6 @@ body {
   place-items: center;
   overflow: hidden;
   background-color: #626262;
-  background-image: var(--wall-tile);
 }
 
 /* ---------- layout ---------- */
@@ -42,7 +37,7 @@ body {
   position: relative;
   width: 942px;
   height: 920px;
-  background: #000;
+  background-color: #626262;
   font-family: 'Press Start 2P', monospace;
   color: #f4f8f8;
   user-select: none;
@@ -55,7 +50,6 @@ body {
   top: 0;
   width: 200px;
   height: 920px;
-  background: #000;
 }
 
 .col-left {
@@ -72,36 +66,54 @@ body {
   top: 0;
   width: 294px;
   height: 920px;
-  background-color: #626262;
-  background-image: var(--wall-tile);
 }
 
 /* ---------- A-TYPE label + statistics panel ---------- */
 
-.atype-label {
-  position: absolute;
-  top: 28px;
-  left: 18px;
+.atype-box {
+  left: 0;
+  top: 0;
+  width: 200px;
+  height: 103px;
+}
+
+.atype-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 20px;
 }
 
-.stats-panel {
-  position: absolute;
-  top: 272px;
-  left: 18px;
+.stats-box {
+  left: 0;
+  top: 113px;
+  width: 200px;
+  height: 690px;
+}
+
+.stats-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 18px 12px;
 }
 
 .stats-title {
   font-size: 16px;
-  margin-bottom: 26px;
+  text-align: center;
+  margin-bottom: 10px;
 }
 
 .stats-row {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 56px;
   font-size: 16px;
+}
+
+.stats-row span {
+  color: #a02830;
 }
 
 /* ---------- stat boxes (double white border in gray band) ---------- */

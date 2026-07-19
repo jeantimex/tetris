@@ -69,6 +69,21 @@ export class Renderer {
     }
 
     if (game.active) {
+      if (game.phase === 'playing' && game.ghost) {
+        const gy = game.ghostY();
+        if (gy !== null && gy !== game.active.y) {
+          // ghost piece: dashed landing outline
+          ctx.save();
+          ctx.globalAlpha = 0.75;
+          ctx.setLineDash([5, 4]);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = colorsFor(game.active.type, game.level).light;
+          for (const [x, y] of game.cells({ ...game.active, y: gy })) {
+            if (y >= 0) ctx.strokeRect(x * CELL + 2, y * CELL + 2, CELL - 4, CELL - 4);
+          }
+          ctx.restore();
+        }
+      }
       const colors = colorsFor(game.active.type, game.level);
       for (const [x, y] of game.cells(game.active)) {
         if (y >= 0) this.drawBlock(ctx, x * CELL, y * CELL, CELL, colors);
@@ -187,24 +202,44 @@ export class Renderer {
   }
 
   private startLines(game: Game): { text: string; size: number; gap: number }[] {
-    const lv = String(game.startLevel).padStart(2, '0');
     const cursor = (row: number) => (game.menuCursor === row ? '> ' : '  ');
-    const mode = game.startMode === 'a' ? 'A-TYPE' : 'B-TYPE';
-    const lines = [
-      { text: 'TETRIS', size: 26, gap: 30 },
-      { text: `${cursor(0)}MODE   < ${mode} >`, size: 12, gap: 14 },
-      { text: `${cursor(1)}LEVEL  < ${lv} >`, size: 12, gap: 14 },
+    const menuRows = game.menuRows().map((row, i) => {
+      switch (row) {
+        case 'mode': {
+          const mode = game.startMode === 'a' ? 'A-TYPE' : 'B-TYPE';
+          return { text: `${cursor(i)}MODE   < ${mode} >`, size: 12, gap: 14 };
+        }
+        case 'level': {
+          const lv = String(game.startLevel).padStart(2, '0');
+          return { text: `${cursor(i)}LEVEL  < ${lv} >`, size: 12, gap: 14 };
+        }
+        case 'height':
+          return { text: `${cursor(i)}HEIGHT < ${game.startHeight} >`, size: 12, gap: 14 };
+        case 'drop': {
+          const key = game.dropKey === 'space' ? 'SPACE' : game.dropKey === 'up' ? 'UP' : 'DEFAULT';
+          return { text: `${cursor(i)}DROP   < ${key} >`, size: 12, gap: 14 };
+        }
+        case 'ghost':
+          return { text: `${cursor(i)}GHOST  < ${game.ghost ? 'ON' : 'OFF'} >`, size: 12, gap: 14 };
+      }
+    });
+
+    const dropHint =
+      game.dropKey === 'space'
+        ? 'SPACE HARD DROP'
+        : game.dropKey === 'up'
+          ? 'UP    HARD DROP'
+          : 'DOWN  SOFT DROP';
+    return [
+      { text: 'TETRIS', size: 26, gap: 26 },
+      ...menuRows,
+      { text: 'ARROWS  SELECT', size: 9, gap: 10 },
+      { text: 'ENTER   START', size: 9, gap: 20 },
+      { text: dropHint, size: 9, gap: 10 },
+      { text: 'Z X ROTATE', size: 9, gap: 10 },
+      { text: 'G GHOST  P PAUSE', size: 9, gap: 10 },
+      { text: 'M SOUND', size: 9, gap: 0 },
     ];
-    if (game.startMode === 'b') {
-      lines.push({ text: `${cursor(2)}HEIGHT < ${game.startHeight} >`, size: 12, gap: 14 });
-    }
-    lines.push(
-      { text: 'ARROWS  SELECT', size: 9, gap: 12 },
-      { text: 'ENTER   START', size: 9, gap: 26 },
-      { text: 'Z X ROTATE', size: 9, gap: 12 },
-      { text: 'P PAUSE  M SOUND', size: 9, gap: 0 },
-    );
-    return lines;
   }
 }
 

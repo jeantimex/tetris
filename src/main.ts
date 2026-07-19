@@ -3,6 +3,7 @@ import { B_TYPE_GOAL, Game } from './game';
 import { Renderer } from './renderer';
 import { TYPES, type PieceType } from './pieces';
 import { AudioEngine } from './audio';
+import { applyWall, syncWallScale } from './wall';
 
 const statCanvases = new Map<PieceType, HTMLCanvasElement>();
 for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas[data-piece]')) {
@@ -36,8 +37,10 @@ const el = {
 function fit(): void {
   const scale = Math.min(window.innerWidth / 956, window.innerHeight / 934);
   el.frame.style.transform = `scale(${scale})`;
+  syncWallScale(scale);
 }
 window.addEventListener('resize', fit);
+applyWall();
 fit();
 
 /* ---------- input with NES-style DAS auto-repeat ---------- */
@@ -85,7 +88,7 @@ function onDirUp(dir: -1 | 1): void {
 /* ---------- start-screen menu ---------- */
 
 function menuRowCount(): number {
-  return game.startMode === 'b' ? 3 : 2;
+  return game.menuRows().length;
 }
 
 function moveMenuCursor(dir: -1 | 1): void {
@@ -94,13 +97,28 @@ function moveMenuCursor(dir: -1 | 1): void {
 }
 
 function changeMenuValue(dir: -1 | 1): void {
-  if (game.menuCursor === 0) {
-    game.startMode = game.startMode === 'a' ? 'b' : 'a';
-    if (game.menuCursor >= menuRowCount()) game.menuCursor = menuRowCount() - 1;
-  } else if (game.menuCursor === 1) {
-    game.startLevel = Math.min(19, Math.max(0, game.startLevel + dir));
-  } else {
-    game.startHeight = Math.min(5, Math.max(0, game.startHeight + dir));
+  switch (game.menuRows()[game.menuCursor]) {
+    case 'mode':
+      game.startMode = game.startMode === 'a' ? 'b' : 'a';
+      if (game.menuCursor >= menuRowCount()) game.menuCursor = menuRowCount() - 1;
+      break;
+    case 'level':
+      game.startLevel = Math.min(19, Math.max(0, game.startLevel + dir));
+      break;
+    case 'height':
+      game.startHeight = Math.min(5, Math.max(0, game.startHeight + dir));
+      break;
+    case 'drop': {
+      const dropKeys: ('space' | 'up' | 'default')[] = ['space', 'up', 'default'];
+      const idx = dropKeys.indexOf(game.dropKey);
+      game.dropKey = dropKeys[(idx + dir + dropKeys.length) % dropKeys.length];
+      game.saveSettings();
+      break;
+    }
+    case 'ghost':
+      game.ghost = !game.ghost;
+      game.saveSettings();
+      break;
   }
 }
 
@@ -119,6 +137,9 @@ game.on((e, data) => {
       break;
     case 'lock':
       audio.sfxLock();
+      break;
+    case 'harddrop':
+      audio.sfxHardDrop();
       break;
     case 'clear':
       audio.sfxClear(data);
@@ -162,6 +183,7 @@ window.addEventListener('keydown', (e) => {
     case 'ArrowUp':
       e.preventDefault();
       if (game.phase === 'start') moveMenuCursor(-1);
+      else if (game.dropKey === 'up') game.hardDrop();
       else game.rotate(1);
       break;
     case 'KeyX':
@@ -170,6 +192,15 @@ window.addEventListener('keydown', (e) => {
       break;
     case 'KeyZ':
       game.rotate(-1);
+      break;
+    case 'Space':
+      e.preventDefault();
+      if (game.dropKey === 'space') game.hardDrop();
+      else game.rotate(1);
+      break;
+    case 'KeyG':
+      game.ghost = !game.ghost;
+      game.saveSettings();
       break;
     case 'Enter':
       if (game.phase === 'win') {

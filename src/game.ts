@@ -6,12 +6,15 @@ export const ROWS = 20;
 export type Cell = PieceType | 0;
 export type Phase = 'start' | 'playing' | 'clearing' | 'paused' | 'gameover' | 'win';
 export type GameMode = 'a' | 'b';
-export type GameEvent = 'move' | 'rotate' | 'lock' | 'clear' | 'levelup' | 'gameover' | 'win';
+export type GameEvent = 'move' | 'rotate' | 'lock' | 'clear' | 'levelup' | 'gameover' | 'win' | 'harddrop';
 
 /** B-Type: lines to clear to win. */
 export const B_TYPE_GOAL = 25;
 /** Garbage rows per HEIGHT setting (0-5). */
 const GARBAGE_ROWS = [0, 2, 4, 6, 8, 10];
+const SETTINGS_KEY = 'tetris-settings';
+
+export type MenuRowId = 'mode' | 'level' | 'height' | 'drop' | 'ghost';
 
 export interface ActivePiece {
   type: PieceType;
@@ -27,8 +30,7 @@ const GRAVITY_FRAMES = [
   2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
 ];
 const FRAME_MS = 1000 / 60;
-const SOFT_DROP_MS = 35;
-const CLEAR_ANIM_MS = 420;
+const CLEAR_ANIM_MS = 300; // NES line clear delay: 17-20 frames
 const LINE_POINTS = [40, 100, 300, 1200];
 const TOP_KEY = 'tetris-top-score';
 
@@ -46,6 +48,8 @@ export class Game {
   startHeight = 0;
   mode: GameMode = 'a';
   menuCursor = 0;
+  dropKey: 'space' | 'up' | 'default' = 'space';
+  ghost = true;
   clearingRows: number[] = [];
   stats: Record<PieceType, number> = { I: 0, O: 0, T: 0, S: 0, Z: 0, J: 0, L: 0 };
 
@@ -53,12 +57,33 @@ export class Game {
   private gravityAcc = 0;
   private clearAcc = 0;
   private softDrop = false;
+  private softDropRows = 0; // rows dropped during the current hold (drives acceleration)
+  private areAcc = -1; // >= 0 while waiting out the entry delay (ARE)
+  private areDelayMs = 0;
   private pendingWin = false;
   private listeners: ((e: GameEvent, data: number) => void)[] = [];
 
   constructor() {
     this.resetBoard();
     this.top = Number(localStorage.getItem(TOP_KEY) ?? 0) || 0;
+    try {
+      const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}');
+      if (s.dropKey === 'up' || s.dropKey === 'space' || s.dropKey === 'default') this.dropKey = s.dropKey;
+      if (typeof s.ghost === 'boolean') this.ghost = s.ghost;
+    } catch {
+      // ignore corrupt settings
+    }
+  }
+
+  saveSettings(): void {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ dropKey: this.dropKey, ghost: this.ghost }));
+  }
+
+  menuRows(): MenuRowId[] {
+    const rows: MenuRowId[] = ['mode', 'level'];
+    if (this.startMode === 'b') rows.push('height');
+    rows.push('drop', 'ghost');
+    return rows;
   }
 
   on(fn: (e: GameEvent, data: number) => void): void {
@@ -83,6 +108,8 @@ export class Game {
     this.clearingRows = [];
     this.pendingWin = false;
     this.gravityAcc = 0;
+    this.softDrop = false;
+    this.areAcc = -1;
     this.stats = { I: 0, O: 0, T: 0, S: 0, Z: 0, J: 0, L: 0 };
     if (this.mode === 'b') this.generateGarbage();
     this.nextType = this.randomType();
@@ -96,12 +123,31 @@ export class Game {
   }
 
   setSoftDrop(on: boolean): void {
+    if (on && this.phase === 'playing' && this.active && !this.softDrop) {
+      // fresh press starts a new hold: reset acceleration, instantly drop one row
+      this.softDropRows = 0;
+      if (!this.collides(this.active.type, this.active.rot, this.active.x, this.active.y + 1)) {
+        this.active.y += 1;
+        this.score += 1;
+        this.softDropRows += 1;
+        this.gravityAcc = 0;
+      }
+    }
     this.softDrop = on;
   }
 
   update(dtMs: number): void {
     if (this.phase === 'playing') {
-      const interval = this.softDrop ? SOFT_DROP_MS : this.gravityInterval();
+      if (this.areAcc >= 0) {
+        // entry delay before the next piece spawns
+        this.areAcc += dtMs;
+        if (this.areAcc >= this.areDelayMs) {
+          this.areAcc = -1;
+          this.spawn();
+        }
+        return;
+      }
+      const interval = this.dropInterval();
       this.gravityAcc += dtMs;
       while (this.gravityAcc >= interval && this.phase === 'playing') {
         this.gravityAcc -= interval;
@@ -117,7 +163,7 @@ export class Game {
           this.win();
         } else {
           this.phase = 'playing';
-          this.spawn();
+          this.beginAre();
         }
       }
     }
@@ -141,12 +187,35 @@ export class Game {
     }
   }
 
+  /** Row the active piece would land on if dropped straight down. */
+  ghostY(): number | null {
+    if (!this.active) return null;
+    let y = this.active.y;
+    while (!this.collides(this.active.type, this.active.rot, this.active.x, y + 1)) y += 1;
+    return y;
+  }
+
+  /** Instantly drop and lock the active piece (+2 points per row). */
+  hardDrop(): void {
+    if (this.phase !== 'playing' || !this.active) return;
+    const y = this.ghostY();
+    if (y === null) return;
+    this.score += (y - this.active.y) * 2;
+    this.active.y = y;
+    this.gravityAcc = 0;
+    this.emit('harddrop');
+    this.lock();
+  }
+
   /** One gravity step: move down or lock. */
   private tick(): void {
     if (!this.active) return;
     if (!this.collides(this.active.type, this.active.rot, this.active.x, this.active.y + 1)) {
       this.active.y += 1;
-      if (this.softDrop) this.score += 1;
+      if (this.softDrop) {
+        this.score += 1;
+        this.softDropRows += 1;
+      }
     } else {
       this.lock();
     }
@@ -154,11 +223,14 @@ export class Game {
 
   private lock(): void {
     if (!this.active) return;
+    let topRow = ROWS - 2;
     for (const [cx, cy] of this.cells(this.active)) {
       if (cy >= 0 && cy < ROWS && cx >= 0 && cx < COLS) this.board[cy][cx] = this.active.type;
+      if (cy < topRow) topRow = cy;
     }
     this.active = null;
     this.emit('lock');
+    this.areDelayMs = this.areFrames(topRow) * FRAME_MS;
 
     const full: number[] = [];
     for (let y = 0; y < ROWS; y++) {
@@ -179,8 +251,17 @@ export class Game {
       this.phase = 'clearing';
       this.emit('clear', full.length);
     } else {
-      this.spawn();
+      this.beginAre();
     }
+  }
+
+  /** NES entry delay: 10 frames locking in the bottom two rows, +2 per 4 rows above (max 18). */
+  private areFrames(topRow: number): number {
+    return Math.min(18, 10 + 2 * Math.floor((18 - Math.min(18, Math.max(0, topRow))) / 4));
+  }
+
+  private beginAre(): void {
+    this.areAcc = 0;
   }
 
   private win(): void {
@@ -219,6 +300,8 @@ export class Game {
     const type = this.nextType;
     this.nextType = this.randomType();
     this.stats[type] += 1;
+    this.gravityAcc = 0;
+    this.softDropRows = 0;
     this.active = { type, rot: 0, x: 3, y: 0 };
     if (this.collides(type, 0, 3, 0)) {
       this.active = null;
@@ -256,5 +339,11 @@ export class Game {
   private gravityInterval(): number {
     const frames = GRAVITY_FRAMES[Math.min(this.level, GRAVITY_FRAMES.length - 1)];
     return frames * FRAME_MS;
+  }
+
+  /** NES soft drop is 1/2G: twice the current level's gravity. */
+  private dropInterval(): number {
+    const normal = this.gravityInterval();
+    return this.softDrop ? Math.max(FRAME_MS, normal / (2 + 4 * this.softDropRows)) : normal;
   }
 }
