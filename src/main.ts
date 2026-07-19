@@ -732,7 +732,7 @@ const TAP_THRESHOLD = 10; // max movement for tap
 const TAP_TIME_THRESHOLD = 300; // max time for tap in ms
 
 boardCanvas.addEventListener('pointerdown', (e) => {
-  if (game.phase !== 'playing') return;
+  if (game.phase !== 'playing' && game.phase !== 'start') return;
   if (activePointerId !== null) return; // already tracking a pointer
 
   activePointerId = e.pointerId;
@@ -747,20 +747,41 @@ boardCanvas.addEventListener('pointerdown', (e) => {
 });
 
 boardCanvas.addEventListener('pointermove', (e) => {
-  if (activePointerId !== e.pointerId || game.phase !== 'playing') return;
+  if (activePointerId !== e.pointerId) return;
+  if (game.phase !== 'playing' && game.phase !== 'start') return;
   e.preventDefault();
 });
 
 function handlePointerEnd(e: PointerEvent): void {
   if (activePointerId !== e.pointerId) return;
 
-  const wasPlaying = game.phase === 'playing';
+  const currentPhase = game.phase;
   activePointerId = null;
 
   // Release pointer capture
   boardCanvas.releasePointerCapture(e.pointerId);
 
-  if (!wasPlaying) return;
+  if (currentPhase !== 'playing' && currentPhase !== 'start') return;
+
+  const deltaX = e.clientX - pointerStartX;
+  const deltaY = e.clientY - pointerStartY;
+  const deltaTime = Date.now() - pointerStartTime;
+  const absX = Math.abs(deltaX);
+  const absY = Math.abs(deltaY);
+
+  // Handle tap to start game
+  if (currentPhase === 'start') {
+    if (absX < TAP_THRESHOLD && absY < TAP_THRESHOLD && deltaTime < TAP_TIME_THRESHOLD) {
+      game.start();
+      if (game.musicType !== 0) {
+        audio.startMusic(game.musicType);
+      }
+      updateGameControls();
+    }
+    return;
+  }
+
+  // Below is for 'playing' phase only
 
   const deltaX = e.clientX - pointerStartX;
   const deltaY = e.clientY - pointerStartY;
