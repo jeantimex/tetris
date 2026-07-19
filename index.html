@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <link rel="preload" href="/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin />
     <title>TETRIS</title>
   </head>
@@ -67,7 +67,64 @@
         <button class="game-btn game-btn--start" id="btn-start" tabindex="0">START</button>
         <button class="game-btn game-btn--pause hidden" id="btn-pause" tabindex="0">PAUSE</button>
         <button class="game-btn game-btn--resume hidden" id="btn-resume" tabindex="0">CONTINUE</button>
+        <button class="game-btn game-btn--restart hidden" id="btn-restart" tabindex="0">RESTART</button>
         <button class="game-btn game-btn--quit" id="btn-quit" tabindex="0">QUIT</button>
+      </div>
+      <div class="keyboard-overlay hidden" id="keyboard-overlay">
+        <div class="keyboard">
+          <div class="keyboard__display">
+            <span class="keyboard__label">ENTER NAME:</span>
+            <span class="keyboard__input" id="keyboard-input">______</span>
+          </div>
+          <div class="keyboard__rows">
+            <div class="keyboard__row">
+              <button class="keyboard__key" data-key="A">A</button>
+              <button class="keyboard__key" data-key="B">B</button>
+              <button class="keyboard__key" data-key="C">C</button>
+              <button class="keyboard__key" data-key="D">D</button>
+              <button class="keyboard__key" data-key="E">E</button>
+              <button class="keyboard__key" data-key="F">F</button>
+              <button class="keyboard__key" data-key="G">G</button>
+              <button class="keyboard__key" data-key="H">H</button>
+              <button class="keyboard__key" data-key="I">I</button>
+              <button class="keyboard__key" data-key="J">J</button>
+            </div>
+            <div class="keyboard__row">
+              <button class="keyboard__key" data-key="K">K</button>
+              <button class="keyboard__key" data-key="L">L</button>
+              <button class="keyboard__key" data-key="M">M</button>
+              <button class="keyboard__key" data-key="N">N</button>
+              <button class="keyboard__key" data-key="O">O</button>
+              <button class="keyboard__key" data-key="P">P</button>
+              <button class="keyboard__key" data-key="Q">Q</button>
+              <button class="keyboard__key" data-key="R">R</button>
+              <button class="keyboard__key" data-key="S">S</button>
+              <button class="keyboard__key" data-key="T">T</button>
+            </div>
+            <div class="keyboard__row">
+              <button class="keyboard__key" data-key="U">U</button>
+              <button class="keyboard__key" data-key="V">V</button>
+              <button class="keyboard__key" data-key="W">W</button>
+              <button class="keyboard__key" data-key="X">X</button>
+              <button class="keyboard__key" data-key="Y">Y</button>
+              <button class="keyboard__key" data-key="Z">Z</button>
+              <button class="keyboard__key" data-key="0">0</button>
+              <button class="keyboard__key" data-key="1">1</button>
+              <button class="keyboard__key" data-key="2">2</button>
+              <button class="keyboard__key" data-key="3">3</button>
+            </div>
+            <div class="keyboard__row">
+              <button class="keyboard__key" data-key="4">4</button>
+              <button class="keyboard__key" data-key="5">5</button>
+              <button class="keyboard__key" data-key="6">6</button>
+              <button class="keyboard__key" data-key="7">7</button>
+              <button class="keyboard__key" data-key="8">8</button>
+              <button class="keyboard__key" data-key="9">9</button>
+              <button class="keyboard__key keyboard__key--wide" data-key="DEL">DEL</button>
+              <button class="keyboard__key keyboard__key--wide keyboard__key--enter" data-key="OK">OK</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

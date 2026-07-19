@@ -11,10 +11,18 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 html {
   background: #000;
+  position: fixed;
+  width: 100%;
 }
 
 body {
@@ -22,6 +30,9 @@ body {
   place-items: center;
   overflow: hidden;
   background-color: #626262;
+  position: fixed;
+  width: 100%;
+  height: 100%;
 }
 
 /* ---------- layout ---------- */
@@ -261,10 +272,12 @@ canvas {
   left: 0;
   right: 0;
   bottom: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 100;
   pointer-events: auto;
+  overflow: hidden;
 }
 
 .menu-overlay.hidden {
@@ -273,6 +286,8 @@ canvas {
 
 #menu-canvas {
   image-rendering: pixelated;
+  transform-origin: center center;
+  flex-shrink: 0;
 }
 
 /* ---------- game controls ---------- */
@@ -396,6 +411,125 @@ canvas {
 
 .game-btn.hidden {
   display: none;
+}
+
+.game-btn--restart {
+  border-color: #38b838;
+  color: #70e070;
+}
+
+.game-btn--restart::before {
+  background: #70e070;
+  box-shadow: calc(100% - 12px) 0 0 0 #70e070;
+}
+
+.game-btn--restart::after {
+  background: #70e070;
+  box-shadow: calc(100% - 12px) 0 0 0 #70e070;
+}
+
+/* ---------- custom keyboard ---------- */
+
+.keyboard-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 50;
+}
+
+.keyboard-overlay.hidden {
+  display: none;
+}
+
+.keyboard {
+  background: #000;
+  border: 3px solid #68c0b8;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.keyboard__display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  background: #1a1a1a;
+  border: 2px solid #68c0b8;
+}
+
+.keyboard__label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  color: #f8f8f8;
+}
+
+.keyboard__input {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 24px;
+  color: #70e070;
+  letter-spacing: 4px;
+}
+
+.keyboard__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.keyboard__row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.keyboard__key {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #5898f8;
+  background: #000;
+  color: #88c0f8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.keyboard__key:hover {
+  background: #284898;
+}
+
+.keyboard__key:active {
+  background: #5898f8;
+  color: #000;
+}
+
+.keyboard__key--wide {
+  width: 60px;
+}
+
+.keyboard__key--enter {
+  border-color: #38b838;
+  color: #70e070;
+}
+
+.keyboard__key--enter:hover {
+  background: #186818;
+}
+
+.keyboard__key--enter:active {
+  background: #38b838;
+  color: #000;
 }
 
 /* ---------- responsive design for mobile ---------- */

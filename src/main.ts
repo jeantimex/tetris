@@ -38,6 +38,9 @@ const el = {
   btnQuit: document.getElementById('btn-quit')!,
   btnPause: document.getElementById('btn-pause')!,
   btnResume: document.getElementById('btn-resume')!,
+  btnRestart: document.getElementById('btn-restart')!,
+  keyboardOverlay: document.getElementById('keyboard-overlay')!,
+  keyboardInput: document.getElementById('keyboard-input')!,
 };
 
 // debug/testing hook
@@ -184,14 +187,26 @@ function updateMenuVisibility(): void {
 
 function updateGameControls(): void {
   const phase = game.phase;
-  const showControls = phase === 'start' || phase === 'playing' || phase === 'paused';
+  const showControls = phase === 'start' || phase === 'playing' || phase === 'paused' || phase === 'gameover' || phase === 'enter-name';
   el.controls.style.display = showControls ? 'flex' : 'none';
 
   // Show/hide individual buttons based on phase
   el.btnStart.classList.toggle('hidden', phase !== 'start');
-  el.btnQuit.classList.toggle('hidden', phase !== 'start' && phase !== 'paused');
+  el.btnQuit.classList.toggle('hidden', phase !== 'start' && phase !== 'paused' && phase !== 'gameover');
   el.btnPause.classList.toggle('hidden', phase !== 'playing');
   el.btnResume.classList.toggle('hidden', phase !== 'paused');
+  el.btnRestart.classList.toggle('hidden', phase !== 'gameover');
+
+  // Show/hide keyboard overlay
+  el.keyboardOverlay.classList.toggle('hidden', phase !== 'enter-name');
+  if (phase === 'enter-name') {
+    updateKeyboardDisplay();
+  }
+}
+
+function updateKeyboardDisplay(): void {
+  const name = game.enteredName.padEnd(6, '_');
+  el.keyboardInput.textContent = name;
 }
 
 // Game control button handlers
@@ -212,7 +227,7 @@ el.btnQuit.addEventListener('click', () => {
     menuState.phase = 'settings';
     updateMenuVisibility();
     audio.sfxMove();
-  } else if (game.phase === 'paused') {
+  } else if (game.phase === 'paused' || game.phase === 'gameover') {
     // Quit to main menu
     audio.setPaused(false);
     audio.stopMusic();
@@ -236,6 +251,51 @@ el.btnResume.addEventListener('click', () => {
     audio.setPaused(false);
     updateGameControls();
   }
+});
+
+el.btnRestart.addEventListener('click', () => {
+  if (game.phase === 'gameover') {
+    game.prepareNewGame();
+    game.start();
+    if (game.musicType !== 0) {
+      audio.startMusic(game.musicType);
+    }
+    updateGameControls();
+  }
+});
+
+// Keyboard click handlers
+el.keyboardOverlay.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement;
+  if (!target.classList.contains('keyboard__key')) return;
+
+  const key = target.dataset.key;
+  if (!key) return;
+
+  if (key === 'DEL') {
+    if (game.enteredName.length > 0) {
+      game.enteredName = game.enteredName.slice(0, -1);
+      audio.sfxMove();
+    }
+  } else if (key === 'OK') {
+    if (game.enteredName.length > 0) {
+      // Save high score
+      addHighScore(game.mode, {
+        name: game.enteredName,
+        score: game.score,
+        level: game.level,
+      });
+      game.phase = 'gameover';
+      game.gameOverSelection = 'restart';
+      audio.sfxRotate();
+      updateGameControls();
+    }
+  } else if (game.enteredName.length < 6) {
+    game.enteredName += key;
+    audio.sfxMove();
+  }
+
+  updateKeyboardDisplay();
 });
 
 /* ---------- input with NES-style DAS auto-repeat ---------- */
@@ -488,7 +548,10 @@ game.on((e, data) => {
       if (isHighScore(game.mode, game.score)) {
         game.enteredName = '';
         game.phase = 'enter-name';
+      } else {
+        game.phase = 'gameover';
       }
+      updateGameControls();
       break;
     case 'win':
       audio.stopMusic();
@@ -497,7 +560,10 @@ game.on((e, data) => {
       if (isHighScore(game.mode, game.score)) {
         game.enteredName = '';
         game.phase = 'enter-name';
+      } else {
+        game.phase = 'gameover';
       }
+      updateGameControls();
       break;
   }
 });
@@ -813,6 +879,23 @@ boardCanvas.addEventListener('pointercancel', handlePointerEnd);
 
 // Prevent context menu on long press
 boardCanvas.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+});
+
+// Prevent page scroll and zoom on mobile
+document.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('gesturestart', (e) => {
+  e.preventDefault();
+});
+
+document.addEventListener('gesturechange', (e) => {
+  e.preventDefault();
+});
+
+document.addEventListener('gestureend', (e) => {
   e.preventDefault();
 });
 
