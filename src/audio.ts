@@ -8,31 +8,68 @@ type Note = [midi: number, beats: number]; // midi 0 = rest
 const A4 = 69;
 const midiToFreq = (m: number): number => 440 * Math.pow(2, (m - A4) / 12);
 
-/** Korobeiniki A-theme (what NES "Music-A" plays). */
-const MELODY: Note[] = [
-  [76, 1], [71, 0.5], [72, 0.5], [74, 1], [72, 0.5], [71, 0.5], // E5 B4 C5 D5 C5 B4
-  [69, 1], [69, 0.5], [72, 0.5], [76, 1], [74, 0.5], [72, 0.5], // A4 A4 C5 E5 D5 C5
-  [71, 1.5], [72, 0.5], [74, 1], [76, 1], // B4. C5 D5 E5
-  [72, 1], [69, 1], [69, 1], [0, 1], // C5 A4 A4 rest
-  [74, 1.5], [77, 0.5], [81, 1], [79, 0.5], [77, 0.5], // D5. F5 A5 G5 F5
-  [76, 1.5], [72, 0.5], [76, 1], [74, 0.5], [72, 0.5], // E5. C5 E5 D5 C5
-  [71, 1.5], [72, 0.5], [74, 1], [76, 1], // B4. C5 D5 E5
-  [72, 1], [69, 1], [69, 1], [0, 1], // C5 A4 A4 rest
+/** Music 1: Korobeiniki A-theme */
+const MELODY_1: Note[] = [
+  [76, 1], [71, 0.5], [72, 0.5], [74, 1], [72, 0.5], [71, 0.5],
+  [69, 1], [69, 0.5], [72, 0.5], [76, 1], [74, 0.5], [72, 0.5],
+  [71, 1.5], [72, 0.5], [74, 1], [76, 1],
+  [72, 1], [69, 1], [69, 1], [0, 1],
+  [74, 1.5], [77, 0.5], [81, 1], [79, 0.5], [77, 0.5],
+  [76, 1.5], [72, 0.5], [76, 1], [74, 0.5], [72, 0.5],
+  [71, 1.5], [72, 0.5], [74, 1], [76, 1],
+  [72, 1], [69, 1], [69, 1], [0, 1],
 ];
 
-/** Simple root/fifth bass line, one note per beat (8 bars of 4). */
-const BASS_LINE: number[] = [
-  45, 45, 52, 45, // Am
-  45, 45, 52, 45, // Am
-  40, 40, 47, 40, // E
-  45, 45, 52, 45, // Am
-  41, 41, 48, 41, // F
-  48, 48, 43, 48, // C
-  40, 40, 47, 40, // E
-  45, 45, 52, 45, // Am
+const BASS_1: number[] = [
+  45, 45, 52, 45, 45, 45, 52, 45,
+  40, 40, 47, 40, 45, 45, 52, 45,
+  41, 41, 48, 41, 48, 48, 43, 48,
+  40, 40, 47, 40, 45, 45, 52, 45,
 ];
 
-const BPM = 150;
+/** Music 2: Lighter, more upbeat theme */
+const MELODY_2: Note[] = [
+  [72, 0.5], [74, 0.5], [76, 1], [74, 0.5], [72, 0.5], [71, 1],
+  [69, 0.5], [71, 0.5], [72, 1], [71, 0.5], [69, 0.5], [67, 1],
+  [69, 0.5], [71, 0.5], [72, 1], [74, 0.5], [76, 0.5], [77, 1],
+  [76, 1], [74, 1], [72, 1], [0, 1],
+  [77, 0.5], [76, 0.5], [74, 1], [72, 0.5], [74, 0.5], [76, 1],
+  [74, 0.5], [72, 0.5], [71, 1], [69, 0.5], [71, 0.5], [72, 1],
+  [74, 0.5], [76, 0.5], [77, 1], [76, 0.5], [74, 0.5], [72, 1],
+  [71, 1], [69, 1], [67, 1], [0, 1],
+];
+
+const BASS_2: number[] = [
+  48, 48, 55, 48, 45, 45, 52, 45,
+  43, 43, 50, 43, 41, 41, 48, 41,
+  48, 48, 55, 48, 53, 53, 48, 53,
+  52, 52, 47, 52, 48, 48, 55, 48,
+];
+
+/** Music 3: Minor key, more intense */
+const MELODY_3: Note[] = [
+  [69, 1], [72, 1], [76, 0.5], [75, 0.5], [72, 1],
+  [69, 0.5], [68, 0.5], [69, 1], [72, 1], [0, 1],
+  [75, 1], [72, 1], [69, 0.5], [68, 0.5], [69, 1],
+  [72, 0.5], [75, 0.5], [76, 1], [72, 1], [0, 1],
+  [81, 1], [80, 0.5], [81, 0.5], [84, 1], [81, 1],
+  [80, 0.5], [76, 0.5], [75, 1], [72, 1], [0, 1],
+  [76, 1], [75, 0.5], [72, 0.5], [69, 1], [68, 0.5], [69, 0.5],
+  [72, 1], [69, 1], [0, 2],
+];
+
+const BASS_3: number[] = [
+  45, 45, 52, 45, 44, 44, 51, 44,
+  45, 45, 52, 45, 48, 48, 55, 48,
+  44, 44, 51, 44, 45, 45, 52, 45,
+  48, 48, 55, 48, 45, 45, 52, 45,
+];
+
+const MUSIC_TRACKS: { melody: Note[]; bass: number[]; bpm: number }[] = [
+  { melody: MELODY_1, bass: BASS_1, bpm: 150 },
+  { melody: MELODY_2, bass: BASS_2, bpm: 140 },
+  { melody: MELODY_3, bass: BASS_3, bpm: 130 },
+];
 const TOTAL_BEATS = 32;
 
 type Voice = 'lead' | 'bass' | 'perc';
@@ -44,14 +81,15 @@ interface MusicEvent {
   durBeats: number;
 }
 
-function buildEvents(): MusicEvent[] {
+function buildEvents(trackIndex: number): MusicEvent[] {
+  const track = MUSIC_TRACKS[trackIndex];
   const events: MusicEvent[] = [];
   let beat = 0;
-  for (const [midi, beats] of MELODY) {
+  for (const [midi, beats] of track.melody) {
     if (midi > 0) events.push({ beat, voice: 'lead', midi, durBeats: beats * 0.92 });
     beat += beats;
   }
-  BASS_LINE.forEach((midi, i) => {
+  track.bass.forEach((midi, i) => {
     events.push({ beat: i, voice: 'bass', midi, durBeats: 0.85 });
   });
   for (let b = 0; b < TOTAL_BEATS; b += 0.5) {
@@ -67,7 +105,9 @@ export class AudioEngine {
   private sfxBus: GainNode | null = null;
   private noiseBuf: AudioBuffer | null = null;
 
-  private events = buildEvents();
+  private events: MusicEvent[] = [];
+  private currentTrack = 0;
+  private currentBpm = 150;
   private evIdx = 0;
   private loopCount = 0;
   private startAt = 0;
@@ -94,9 +134,12 @@ export class AudioEngine {
     if (this.ctx.state === 'suspended') void this.ctx.resume();
   }
 
-  startMusic(): void {
+  startMusic(trackNum: 1 | 2 | 3 = 1): void {
     if (!this.ctx || !this.musicBus) return;
     this.stopMusic(0);
+    this.currentTrack = trackNum - 1;
+    this.currentBpm = MUSIC_TRACKS[this.currentTrack].bpm;
+    this.events = buildEvents(this.currentTrack);
     const now = this.ctx.currentTime;
     this.musicBus.gain.cancelScheduledValues(now);
     this.musicBus.gain.setValueAtTime(0.12, now);
@@ -134,7 +177,7 @@ export class AudioEngine {
 
   private schedule(): void {
     if (!this.ctx) return;
-    const secPerBeat = 60 / BPM;
+    const secPerBeat = 60 / this.currentBpm;
     const horizon = this.ctx.currentTime + 0.15;
     for (;;) {
       const ev = this.events[this.evIdx];

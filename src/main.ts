@@ -4,6 +4,7 @@ import { Renderer } from './renderer';
 import { TYPES, type PieceType } from './pieces';
 import { AudioEngine } from './audio';
 import { applyWall, syncWallScale } from './wall';
+import { MenuRenderer, loadHighScores, type MenuState, type MusicType, type HighScoreEntry } from './menu';
 
 const statCanvases = new Map<PieceType, HTMLCanvasElement>();
 for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas[data-piece]')) {
@@ -16,6 +17,10 @@ const renderer = new Renderer(
   document.getElementById('next') as HTMLCanvasElement,
   statCanvases,
 );
+
+const menuOverlay = document.getElementById('menu-overlay')!;
+const menuCanvas = document.getElementById('menu-canvas') as HTMLCanvasElement;
+const menuRenderer = new MenuRenderer(menuCanvas);
 
 const el = {
   lines: document.getElementById('lines')!,
@@ -32,16 +37,47 @@ const el = {
 // debug/testing hook
 (window as unknown as { __game: Game }).__game = game;
 
+/* ---------- menu state ---------- */
+
+const menuState: MenuState = {
+  phase: 'type',
+  gameType: 'a',
+  musicType: 1,
+  level: 0,
+  height: 0,
+  dropKey: 'space',
+  ghost: true,
+  typeCursor: 'game',
+  musicCursor: 0,
+  btypeFocus: 'level',
+  settingsCursor: 0,
+};
+
+let aScores: HighScoreEntry[] = loadHighScores('a');
+let bScores: HighScoreEntry[] = loadHighScores('b');
+
 /* ---------- fit to window ---------- */
 
 function fit(): void {
-  const scale = Math.min(window.innerWidth / 956, window.innerHeight / 934);
+  const scale = Math.min(window.innerWidth / 1006, window.innerHeight / 934);
   el.frame.style.transform = `scale(${scale})`;
   syncWallScale(scale);
+
+  // Scale menu canvas too
+  const menuScale = Math.min(window.innerWidth / 540, window.innerHeight / 520);
+  menuCanvas.style.transform = `scale(${menuScale})`;
 }
 window.addEventListener('resize', fit);
 applyWall();
 fit();
+
+/* ---------- menu visibility ---------- */
+
+function updateMenuVisibility(): void {
+  const showMenu = game.phase === 'menu-type' || game.phase === 'menu-level' || game.phase === 'menu-settings';
+  menuOverlay.classList.toggle('hidden', !showMenu);
+  el.frame.style.display = showMenu ? 'none' : '';
+}
 
 /* ---------- input with NES-style DAS auto-repeat ---------- */
 
@@ -108,16 +144,154 @@ function changeMenuValue(dir: -1 | 1): void {
     case 'height':
       game.startHeight = Math.min(5, Math.max(0, game.startHeight + dir));
       break;
-    case 'drop': {
+  }
+}
+
+/* ---------- pre-game menu input handling ---------- */
+
+function handleMenuTypeInput(code: string): void {
+  switch (code) {
+    case 'ArrowLeft':
+      // Select A-TYPE
+      menuState.gameType = 'a';
+      audio.sfxMove();
+      break;
+    case 'ArrowRight':
+      // Select B-TYPE
+      menuState.gameType = 'b';
+      audio.sfxMove();
+      break;
+    case 'ArrowUp':
+      // Cycle music selection up
+      menuState.musicCursor = (menuState.musicCursor - 1 + 4) % 4;
+      menuState.musicType = menuState.musicCursor === 3 ? 0 : (menuState.musicCursor + 1) as MusicType;
+      audio.sfxMove();
+      break;
+    case 'ArrowDown':
+      // Cycle music selection down
+      menuState.musicCursor = (menuState.musicCursor + 1) % 4;
+      menuState.musicType = menuState.musicCursor === 3 ? 0 : (menuState.musicCursor + 1) as MusicType;
+      audio.sfxMove();
+      break;
+    case 'Enter':
+    case 'Space':
+      // Proceed to level select screen
+      game.startMode = menuState.gameType;
+      game.musicType = menuState.musicType;
+      menuState.phase = menuState.gameType === 'a' ? 'atype' : 'btype';
+      menuState.level = game.startLevel;
+      menuState.height = game.startHeight;
+      game.phase = 'menu-level';
+      audio.sfxRotate();
+      break;
+  }
+}
+
+function handleMenuLevelInput(code: string): void {
+  const isAType = menuState.phase === 'atype';
+  const focusLevel = isAType || menuState.btypeFocus === 'level';
+
+  switch (code) {
+    case 'ArrowUp':
+      if (focusLevel) {
+        if (menuState.level >= 5) menuState.level -= 5;
+      } else {
+        if (menuState.height >= 3) menuState.height -= 3;
+      }
+      audio.sfxMove();
+      break;
+    case 'ArrowDown':
+      if (focusLevel) {
+        if (menuState.level < 5) menuState.level += 5;
+      } else {
+        if (menuState.height < 3) menuState.height += 3;
+      }
+      audio.sfxMove();
+      break;
+    case 'ArrowLeft':
+      if (focusLevel) {
+        if (menuState.level > 0) menuState.level--;
+      } else {
+        if (menuState.height > 0) menuState.height--;
+      }
+      audio.sfxMove();
+      break;
+    case 'ArrowRight':
+      if (focusLevel) {
+        if (menuState.level < 9) menuState.level++;
+      } else {
+        if (menuState.height < 5) menuState.height++;
+      }
+      audio.sfxMove();
+      break;
+    case 'Tab':
+      // Switch focus between level and height (B-type only)
+      if (!isAType) {
+        menuState.btypeFocus = menuState.btypeFocus === 'level' ? 'height' : 'level';
+        audio.sfxMove();
+      }
+      break;
+    case 'Escape':
+    case 'Backspace':
+      // Go back to type selection
+      menuState.phase = 'type';
+      menuState.btypeFocus = 'level';
+      game.phase = 'menu-type';
+      audio.sfxMove();
+      break;
+    case 'Enter':
+    case 'Space':
+      // Go to settings screen
+      game.startLevel = menuState.level;
+      game.startHeight = menuState.height;
+      menuState.phase = 'settings';
+      menuState.settingsCursor = 0;
+      game.phase = 'menu-settings';
+      audio.sfxRotate();
+      break;
+  }
+}
+
+function handleMenuSettingsInput(code: string): void {
+  switch (code) {
+    case 'ArrowLeft': {
+      // Cycle drop key left
       const dropKeys: ('space' | 'up' | 'default')[] = ['space', 'up', 'default'];
-      const idx = dropKeys.indexOf(game.dropKey);
-      game.dropKey = dropKeys[(idx + dir + dropKeys.length) % dropKeys.length];
-      game.saveSettings();
+      const idx = dropKeys.indexOf(menuState.dropKey);
+      menuState.dropKey = dropKeys[(idx - 1 + dropKeys.length) % dropKeys.length];
+      audio.sfxMove();
       break;
     }
-    case 'ghost':
-      game.ghost = !game.ghost;
+    case 'ArrowRight': {
+      // Cycle drop key right
+      const dropKeys: ('space' | 'up' | 'default')[] = ['space', 'up', 'default'];
+      const idx = dropKeys.indexOf(menuState.dropKey);
+      menuState.dropKey = dropKeys[(idx + 1) % dropKeys.length];
+      audio.sfxMove();
+      break;
+    }
+    case 'ArrowUp':
+    case 'ArrowDown':
+      // Toggle ghost mode
+      menuState.ghost = !menuState.ghost;
+      audio.sfxMove();
+      break;
+    case 'Escape':
+    case 'Backspace':
+      // Go back to level select
+      menuState.phase = menuState.gameType === 'a' ? 'atype' : 'btype';
+      game.phase = 'menu-level';
+      audio.sfxMove();
+      break;
+    case 'Enter':
+    case 'Space':
+      // Apply settings and start game
+      game.dropKey = menuState.dropKey;
+      game.ghost = menuState.ghost;
       game.saveSettings();
+      game.phase = 'start';
+      updateMenuVisibility();
+      audio.sfxRotate();
       break;
   }
 }
@@ -164,6 +338,26 @@ window.addEventListener('keydown', (e) => {
     if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
     return;
   }
+
+  // Handle pre-game menu phases
+  if (game.phase === 'menu-type') {
+    e.preventDefault();
+    handleMenuTypeInput(e.code);
+    return;
+  }
+
+  if (game.phase === 'menu-level') {
+    e.preventDefault();
+    handleMenuLevelInput(e.code);
+    return;
+  }
+
+  if (game.phase === 'menu-settings') {
+    e.preventDefault();
+    handleMenuSettingsInput(e.code);
+    return;
+  }
+
   switch (e.code) {
     case 'ArrowLeft':
       e.preventDefault();
@@ -204,10 +398,14 @@ window.addEventListener('keydown', (e) => {
       break;
     case 'Enter':
       if (game.phase === 'win') {
-        game.phase = 'start';
+        game.phase = 'menu-type';
+        menuState.phase = 'type';
+        updateMenuVisibility();
       } else if (game.phase === 'start' || game.phase === 'gameover') {
         game.start();
-        audio.startMusic();
+        if (game.musicType !== 0) {
+          audio.startMusic(game.musicType);
+        }
       }
       break;
     case 'KeyP':
@@ -287,10 +485,28 @@ let last = performance.now();
 function frame(now: number): void {
   const dt = Math.min(now - last, 100);
   last = now;
-  game.update(dt);
-  updateHud();
-  renderer.draw(game, now);
+
+  updateMenuVisibility();
+
+  if (game.phase === 'menu-type' || game.phase === 'menu-level' || game.phase === 'menu-settings') {
+    // Draw menu
+    if (game.phase === 'menu-type') {
+      menuState.phase = 'type';
+    } else if (game.phase === 'menu-level') {
+      menuState.phase = menuState.gameType === 'a' ? 'atype' : 'btype';
+    } else {
+      menuState.phase = 'settings';
+    }
+    menuRenderer.draw(menuState, aScores, bScores);
+  } else {
+    game.update(dt);
+    updateHud();
+    renderer.draw(game, now);
+  }
+
   requestAnimationFrame(frame);
 }
 
+// Initialize menu visibility
+updateMenuVisibility();
 requestAnimationFrame(frame);

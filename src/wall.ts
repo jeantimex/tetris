@@ -103,7 +103,7 @@ function buildSvg(bricks: Cells[]): string {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">` +
     `<rect width="${SIZE}" height="${SIZE}" fill="#7e7e7e"/>` +
-    `<path d="${light.join('')}" fill="none" stroke="#e8e8e8" stroke-width="2.5"/>` +
+    `<path d="${light.join('')}" fill="none" stroke="#63a39d" stroke-width="2.5"/>` +
     `<path d="${dark.join('')}" fill="none" stroke="#161616" stroke-width="3"/>` +
     `</svg>`
   );
@@ -114,8 +114,6 @@ export function applyWall(): void {
   if (!bricks) return; // keep the flat CSS color as fallback
   const uri = `url("data:image/svg+xml,${encodeURIComponent(buildSvg(bricks))}")`;
   document.body.style.backgroundImage = uri;
-  const game = document.querySelector<HTMLElement>('.game');
-  if (game) game.style.backgroundImage = uri;
 }
 
 /** Keep the surround wall's brick size in sync with the scaled game frame. */

@@ -28,16 +28,16 @@ body {
 
 .game-frame {
   position: relative;
-  background: linear-gradient(135deg, #6a686e 0%, #5f5d62 45%, #38363c 100%);
+  background: transparent;
   padding: 7px;
   transform-origin: center center;
 }
 
 .game {
   position: relative;
-  width: 942px;
+  width: 992px;
   height: 920px;
-  background-color: #626262;
+  background-color: transparent;
   font-family: 'Press Start 2P', monospace;
   color: #f4f8f8;
   user-select: none;
@@ -48,13 +48,13 @@ body {
   position: absolute;
   left: 0;
   top: 0;
-  width: 200px;
+  width: 250px;
   height: 920px;
 }
 
 .col-left {
   position: absolute;
-  left: 210px;
+  left: 260px;
   top: 0;
   width: 428px;
   height: 920px;
@@ -62,7 +62,7 @@ body {
 
 .col-right {
   position: absolute;
-  left: 648px;
+  left: 698px;
   top: 0;
   width: 294px;
   height: 920px;
@@ -73,7 +73,7 @@ body {
 .atype-box {
   left: 0;
   top: 0;
-  width: 200px;
+  width: 250px;
   height: 103px;
 }
 
@@ -87,7 +87,7 @@ body {
 .stats-box {
   left: 0;
   top: 113px;
-  width: 200px;
+  width: 250px;
   height: 690px;
 }
 
@@ -108,7 +108,8 @@ body {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  padding: 0 10px;
   font-size: 16px;
 }
 
@@ -274,3 +275,25 @@ canvas {
 .corner.screen.tr { right: 0; top: 0; }
 .corner.screen.br { right: 0; bottom: 0; }
 .corner.screen.bl { left: 0; bottom: 0; }
+
+/* ---------- menu overlay ---------- */
+
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.menu-overlay.hidden {
+  display: none;
+}
+
+#menu-canvas {
+  image-rendering: pixelated;
+}

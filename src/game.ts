@@ -4,7 +4,7 @@ export const COLS = 10;
 export const ROWS = 20;
 
 export type Cell = PieceType | 0;
-export type Phase = 'start' | 'playing' | 'clearing' | 'paused' | 'gameover' | 'win';
+export type Phase = 'menu-type' | 'menu-level' | 'menu-settings' | 'start' | 'playing' | 'clearing' | 'paused' | 'gameover' | 'win';
 export type GameMode = 'a' | 'b';
 export type GameEvent = 'move' | 'rotate' | 'lock' | 'clear' | 'levelup' | 'gameover' | 'win' | 'harddrop';
 
@@ -14,7 +14,7 @@ export const B_TYPE_GOAL = 25;
 const GARBAGE_ROWS = [0, 2, 4, 6, 8, 10];
 const SETTINGS_KEY = 'tetris-settings';
 
-export type MenuRowId = 'mode' | 'level' | 'height' | 'drop' | 'ghost';
+export type MenuRowId = 'mode' | 'level' | 'height';
 
 export interface ActivePiece {
   type: PieceType;
@@ -36,7 +36,7 @@ const TOP_KEY = 'tetris-top-score';
 
 export class Game {
   board: Cell[][] = [];
-  phase: Phase = 'start';
+  phase: Phase = 'menu-type';
   active: ActivePiece | null = null;
   nextType: PieceType = 'T';
   score = 0;
@@ -47,6 +47,7 @@ export class Game {
   startMode: GameMode = 'a';
   startHeight = 0;
   mode: GameMode = 'a';
+  musicType: 1 | 2 | 3 | 0 = 1;
   menuCursor = 0;
   dropKey: 'space' | 'up' | 'default' = 'space';
   ghost = true;
@@ -82,7 +83,6 @@ export class Game {
   menuRows(): MenuRowId[] {
     const rows: MenuRowId[] = ['mode', 'level'];
     if (this.startMode === 'b') rows.push('height');
-    rows.push('drop', 'ghost');
     return rows;
   }
 

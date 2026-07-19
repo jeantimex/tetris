@@ -215,12 +215,6 @@ export class Renderer {
         }
         case 'height':
           return { text: `${cursor(i)}HEIGHT < ${game.startHeight} >`, size: 12, gap: 14 };
-        case 'drop': {
-          const key = game.dropKey === 'space' ? 'SPACE' : game.dropKey === 'up' ? 'UP' : 'DEFAULT';
-          return { text: `${cursor(i)}DROP   < ${key} >`, size: 12, gap: 14 };
-        }
-        case 'ghost':
-          return { text: `${cursor(i)}GHOST  < ${game.ghost ? 'ON' : 'OFF'} >`, size: 12, gap: 14 };
       }
     });
 
@@ -237,8 +231,7 @@ export class Renderer {
       { text: 'ENTER   START', size: 9, gap: 20 },
       { text: dropHint, size: 9, gap: 10 },
       { text: 'Z X ROTATE', size: 9, gap: 10 },
-      { text: 'G GHOST  P PAUSE', size: 9, gap: 10 },
-      { text: 'M SOUND', size: 9, gap: 0 },
+      { text: 'P PAUSE  M SOUND', size: 9, gap: 0 },
     ];
   }
 }
