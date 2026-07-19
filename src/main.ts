@@ -825,9 +825,9 @@ window.addEventListener('pointerdown', (e) => {
   if (game.phase !== 'playing' && game.phase !== 'start') return;
   if (activePointerId !== null) return; // already tracking a pointer
 
-  // Exclude buttons, menus, and virtual keyboard keys
+  // Exclude buttons, menus, virtual keyboard keys, and GitHub link
   const target = e.target as HTMLElement | null;
-  if (target?.closest('button, .game-btn, .keyboard__key, #menu-canvas, .keyboard-overlay')) {
+  if (target?.closest('button, .game-btn, .keyboard__key, #menu-canvas, .keyboard-overlay, .github-link')) {
     return; // allow button and menu click handlers to execute normally
   }
 

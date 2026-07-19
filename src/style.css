@@ -45,6 +45,42 @@ body {
   height: 100%;
 }
 
+/* ---------- GitHub Link ---------- */
+
+.github-link {
+  position: fixed;
+  bottom: 14px;
+  left: 18px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d0d8d8;
+  text-decoration: none;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 6px 10px;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.github-link:hover {
+  opacity: 1;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.github-link .github-icon {
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
 /* ---------- layout ---------- */
 
 .game-frame {
