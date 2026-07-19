@@ -1,5 +1,5 @@
 import { COLS, ROWS, type Game } from './game';
-import { SHAPES } from './pieces';
+import { SHAPES, type PieceType } from './pieces';
 import { colorsFor, type BlockColors } from './palettes';
 
 const BOARD_W = 380;
@@ -8,6 +8,9 @@ const CELL = BOARD_W / COLS; // 38
 const NEXT_W = 172;
 const NEXT_H = 160;
 const NEXT_CELL = 32;
+const STAT_W = 82;
+const STAT_H = 42;
+const STAT_CELL = 20;
 
 const FONT = '"Press Start 2P", monospace';
 
@@ -26,10 +29,18 @@ function setupCanvas(canvas: HTMLCanvasElement, w: number, h: number): CanvasRen
 export class Renderer {
   private bctx: CanvasRenderingContext2D;
   private nctx: CanvasRenderingContext2D;
+  private statCtx = new Map<PieceType, CanvasRenderingContext2D>();
 
-  constructor(boardCanvas: HTMLCanvasElement, nextCanvas: HTMLCanvasElement) {
+  constructor(
+    boardCanvas: HTMLCanvasElement,
+    nextCanvas: HTMLCanvasElement,
+    statCanvases: Map<PieceType, HTMLCanvasElement>,
+  ) {
     this.bctx = setupCanvas(boardCanvas, BOARD_W, BOARD_H);
     this.nctx = setupCanvas(nextCanvas, NEXT_W, NEXT_H);
+    for (const [type, canvas] of statCanvases) {
+      this.statCtx.set(type, setupCanvas(canvas, STAT_W, STAT_H));
+    }
   }
 
   draw(game: Game, now: number): void {
@@ -95,6 +106,31 @@ export class Renderer {
     const colors = colorsFor(game.nextType, game.level);
     for (const [x, y] of shape) {
       this.drawBlock(ctx, ox + x * NEXT_CELL, oy + y * NEXT_CELL, NEXT_CELL, colors);
+    }
+  }
+
+  /** Piece icons in the statistics panel; recolors with the level palette. */
+  drawStatistics(game: Game): void {
+    for (const [type, ctx] of this.statCtx) {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, STAT_W, STAT_H);
+
+      const shape = SHAPES[type][0];
+      const xs = shape.map(([x]) => x);
+      const ys = shape.map(([, y]) => y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const w = (maxX - minX + 1) * STAT_CELL;
+      const h = (maxY - minY + 1) * STAT_CELL;
+      const ox = (STAT_W - w) / 2 - minX * STAT_CELL;
+      const oy = (STAT_H - h) / 2 - minY * STAT_CELL;
+
+      const colors = colorsFor(type, game.level);
+      for (const [x, y] of shape) {
+        this.drawBlock(ctx, ox + x * STAT_CELL, oy + y * STAT_CELL, STAT_CELL, colors);
+      }
     }
   }
 

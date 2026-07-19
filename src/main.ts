@@ -1,11 +1,18 @@
 import './style.css';
 import { Game } from './game';
 import { Renderer } from './renderer';
+import { TYPES, type PieceType } from './pieces';
+
+const statCanvases = new Map<PieceType, HTMLCanvasElement>();
+for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas[data-piece]')) {
+  statCanvases.set(canvas.dataset.piece as PieceType, canvas);
+}
 
 const game = new Game();
 const renderer = new Renderer(
   document.getElementById('board') as HTMLCanvasElement,
   document.getElementById('next') as HTMLCanvasElement,
+  statCanvases,
 );
 
 const el = {
@@ -13,7 +20,10 @@ const el = {
   top: document.getElementById('top')!,
   score: document.getElementById('score')!,
   level: document.getElementById('level')!,
-  game: document.getElementById('game')!,
+  frame: document.getElementById('game-frame')!,
+  stats: new Map<PieceType, HTMLElement>(
+    TYPES.map((t) => [t, document.getElementById(`stat-${t}`)!]),
+  ),
 };
 
 // debug/testing hook
@@ -22,8 +32,8 @@ const el = {
 /* ---------- fit to window ---------- */
 
 function fit(): void {
-  const scale = Math.min(window.innerWidth / 732, window.innerHeight / 920);
-  el.game.style.transform = `scale(${scale})`;
+  const scale = Math.min(window.innerWidth / 956, window.innerHeight / 934);
+  el.frame.style.transform = `scale(${scale})`;
 }
 window.addEventListener('resize', fit);
 fit();
@@ -124,21 +134,36 @@ window.addEventListener('keyup', (e) => {
 
 /* ---------- HUD ---------- */
 
-const shown = { lines: '', top: '', score: '', level: '' };
+const shown = { lines: '', top: '', score: '', level: '', stats: '' };
+let iconLevel = -1;
 
 function updateHud(): void {
   const lines = String(game.lines).padStart(3, '0');
   const top = String(Math.max(game.top, game.score)).padStart(6, '0');
   const score = String(game.score).padStart(6, '0');
   const level = String(game.phase === 'start' ? game.startLevel : game.level).padStart(2, '0');
+  const stats = TYPES.map((t) => Math.min(999, game.stats[t]).toString().padStart(3, '0'));
   if (lines !== shown.lines) el.lines.textContent = lines;
   if (top !== shown.top) el.top.textContent = top;
   if (score !== shown.score) el.score.textContent = score;
   if (level !== shown.level) el.level.textContent = level;
+  const statsKey = stats.join();
+  if (statsKey !== shown.stats) {
+    TYPES.forEach((t, i) => {
+      el.stats.get(t)!.textContent = stats[i];
+    });
+  }
   shown.lines = lines;
   shown.top = top;
   shown.score = score;
   shown.level = level;
+  shown.stats = statsKey;
+
+  // statistics icons follow the level palette
+  if (game.level !== iconLevel) {
+    iconLevel = game.level;
+    renderer.drawStatistics(game);
+  }
 }
 
 /* ---------- main loop ---------- */

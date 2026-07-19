@@ -7,47 +7,62 @@
     <title>TETRIS</title>
   </head>
   <body>
-    <div class="game" id="game">
-      <div class="col-left">
-        <div class="stat-box lines-box">
-          <div class="stat-inner lines-inner">LINES-<span id="lines">000</span></div>
+    <div class="game-frame" id="game-frame">
+      <div class="game" id="game">
+        <div class="col-stats">
+          <div class="atype-label">A-TYPE</div>
+          <div class="stats-panel">
+            <div class="stats-title">STATISTICS</div>
+            <div class="stats-row"><canvas data-piece="T" width="82" height="42"></canvas><span id="stat-T">000</span></div>
+            <div class="stats-row"><canvas data-piece="J" width="82" height="42"></canvas><span id="stat-J">000</span></div>
+            <div class="stats-row"><canvas data-piece="Z" width="82" height="42"></canvas><span id="stat-Z">000</span></div>
+            <div class="stats-row"><canvas data-piece="O" width="82" height="42"></canvas><span id="stat-O">000</span></div>
+            <div class="stats-row"><canvas data-piece="S" width="82" height="42"></canvas><span id="stat-S">000</span></div>
+            <div class="stats-row"><canvas data-piece="L" width="82" height="42"></canvas><span id="stat-L">000</span></div>
+            <div class="stats-row"><canvas data-piece="I" width="82" height="42"></canvas><span id="stat-I">000</span></div>
+          </div>
         </div>
-        <div class="bevel-frame playfield-frame">
-          <div class="bevel-gap">
-            <div class="bevel-cyan">
-              <div class="bevel-core">
-                <canvas id="board" width="380" height="760"></canvas>
+        <div class="col-left">
+          <div class="stat-box lines-box">
+            <div class="stat-inner lines-inner">LINES-<span id="lines">000</span></div>
+          </div>
+          <div class="bevel-frame playfield-frame">
+            <div class="bevel-gap">
+              <div class="bevel-cyan">
+                <div class="bevel-core">
+                  <canvas id="board" width="380" height="760"></canvas>
+                </div>
               </div>
             </div>
-          </div>
-          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-        </div>
-      </div>
-      <div class="col-right">
-        <div class="stat-box top-box">
-          <div class="stat-inner top-inner">
-            <div>TOP</div>
-            <div id="top">000000</div>
-            <div class="v-gap"></div>
-            <div>SCORE</div>
-            <div id="score">000000</div>
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
           </div>
         </div>
-        <div class="bevel-frame next-frame">
-          <div class="bevel-gap">
-            <div class="bevel-cyan">
-              <div class="bevel-core next-core">
-                <div class="next-label">NEXT</div>
-                <canvas id="next" width="172" height="160"></canvas>
-              </div>
+        <div class="col-right">
+          <div class="stat-box top-box">
+            <div class="stat-inner top-inner">
+              <div>TOP</div>
+              <div id="top">000000</div>
+              <div class="v-gap"></div>
+              <div>SCORE</div>
+              <div id="score">000000</div>
             </div>
           </div>
-          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-        </div>
-        <div class="stat-box level-box">
-          <div class="stat-inner level-inner">
-            <div>LEVEL</div>
-            <div id="level">00</div>
+          <div class="bevel-frame next-frame">
+            <div class="bevel-gap">
+              <div class="bevel-cyan">
+                <div class="bevel-core next-core">
+                  <div class="next-label">NEXT</div>
+                  <canvas id="next" width="172" height="160"></canvas>
+                </div>
+              </div>
+            </div>
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          </div>
+          <div class="stat-box level-box">
+            <div class="stat-inner level-inner">
+              <div>LEVEL</div>
+              <div id="level">00</div>
+            </div>
           </div>
         </div>
       </div>

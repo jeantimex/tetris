@@ -36,6 +36,7 @@ export class Game {
   level = 0;
   startLevel = 0;
   clearingRows: number[] = [];
+  stats: Record<PieceType, number> = { I: 0, O: 0, T: 0, S: 0, Z: 0, J: 0, L: 0 };
 
   private prevType: PieceType | null = null;
   private gravityAcc = 0;
@@ -59,6 +60,7 @@ export class Game {
     this.prevType = null;
     this.clearingRows = [];
     this.gravityAcc = 0;
+    this.stats = { I: 0, O: 0, T: 0, S: 0, Z: 0, J: 0, L: 0 };
     this.nextType = this.randomType();
     this.phase = 'playing';
     this.spawn();
@@ -154,6 +156,7 @@ export class Game {
   private spawn(): void {
     const type = this.nextType;
     this.nextType = this.randomType();
+    this.stats[type] += 1;
     this.active = { type, rot: 0, x: 3, y: 0 };
     if (this.collides(type, 0, 3, 0)) {
       this.active = null;
