@@ -782,13 +782,6 @@ function handlePointerEnd(e: PointerEvent): void {
   }
 
   // Below is for 'playing' phase only
-
-  const deltaX = e.clientX - pointerStartX;
-  const deltaY = e.clientY - pointerStartY;
-  const deltaTime = Date.now() - pointerStartTime;
-  const absX = Math.abs(deltaX);
-  const absY = Math.abs(deltaY);
-
   // Check if it's a tap (small movement, short time)
   if (absX < TAP_THRESHOLD && absY < TAP_THRESHOLD && deltaTime < TAP_TIME_THRESHOLD) {
     // Tap to rotate
