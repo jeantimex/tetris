@@ -216,19 +216,27 @@ export function drawBevelFrame(canvas: HTMLCanvasElement, options: FrameOptions)
 
 /**
  * Initialize all frame canvases in the document.
+ * Can be called multiple times - will update existing canvases.
  */
 export function initFrames(): void {
   const frames = document.querySelectorAll<HTMLElement>('.frame');
 
   frames.forEach((frame) => {
     const isBevel = frame.classList.contains('frame--bevel');
-    const rect = frame.getBoundingClientRect();
-    const canvas = document.createElement('canvas');
-    canvas.className = 'frame__canvas';
-    canvas.style.position = 'absolute';
-    canvas.style.left = '0';
-    canvas.style.top = '0';
-    canvas.style.pointerEvents = 'none';
+    const width = frame.offsetWidth;
+    const height = frame.offsetHeight;
+
+    // Check if canvas already exists, otherwise create one
+    let canvas = frame.querySelector<HTMLCanvasElement>('.frame__canvas');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.className = 'frame__canvas';
+      canvas.style.position = 'absolute';
+      canvas.style.left = '0';
+      canvas.style.top = '0';
+      canvas.style.pointerEvents = 'none';
+      frame.insertBefore(canvas, frame.firstChild);
+    }
 
     // Get custom properties if set
     const style = getComputedStyle(frame);
@@ -237,8 +245,8 @@ export function initFrames(): void {
     const cornerSize = parseInt(style.getPropertyValue('--frame-corner-size')) || undefined;
 
     const options = {
-      width: rect.width,
-      height: rect.height,
+      width,
+      height,
       borderColor,
       borderWidth,
       cornerSize,
@@ -249,7 +257,5 @@ export function initFrames(): void {
     } else {
       drawFrame(canvas, options);
     }
-
-    frame.insertBefore(canvas, frame.firstChild);
   });
 }

@@ -86,10 +86,12 @@ function fit(): void {
   menuScale = Math.min(vw / 520, vh / 490);
   menuCanvas.style.transform = `scale(${menuScale})`;
   menuRenderer.setScale(menuScale);
+
+  // Redraw frames when layout changes
+  initFrames();
 }
 window.addEventListener('resize', fit);
 applyWall();
-initFrames();
 fit();
 
 /* ---------- menu click handling ---------- */
