@@ -825,11 +825,11 @@ export class MenuRenderer {
     const ctx = this.ctx;
     const cx = this.width / 2;
 
-    // 1. Picture in center: red_square.png (enlarged hero image)
-    const imgW = 430;
-    const imgH = 310;
+    // 1. Picture in center: red_square.png (hero image)
+    const imgW = 410;
+    const imgH = 290;
     const imgX = cx;
-    const imgY = 226;
+    const imgY = 238;
     const inset = 4;
 
     ctx.fillStyle = COLORS.black;
@@ -859,8 +859,8 @@ export class MenuRenderer {
     this.drawCornerDeco(imgX + imgW / 2 + inset - 4, imgY + imgH / 2 + inset - 4, frameColors, true, true);
 
     // 2. TETRIS Title Banner at top
-    const titleW = 260;
-    const titleH = 44;
+    const titleW = 280;
+    const titleH = 50;
     const titleY = 32;
 
     const colors = this.getColorSet('red');
@@ -876,13 +876,21 @@ export class MenuRenderer {
     ctx.fillRect(cx - titleW / 2 + 6, titleY - titleH / 2 + 6, titleW - 12, titleH - 12);
 
     ctx.fillStyle = COLORS.white;
-    ctx.font = `24px ${FONT}`;
+    ctx.font = `28px ${FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('TETRIS', cx, titleY);
+    ctx.fillText('TETRIS', cx - 12, titleY);
+
+    // Trademark TM badge
+    const titleWidth = ctx.measureText('TETRIS').width;
+    ctx.fillStyle = COLORS.white;
+    ctx.font = `11px ${FONT}`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('TM', cx - 12 + titleWidth / 2 + 4, titleY - 12);
 
     // 3. Start Button at bottom
-    const btnY = 434;
+    const btnY = 440;
     this.drawButton(cx, btnY, 'START', 'green', true, 18);
 
     // Click regions for Start button & full screen start action
