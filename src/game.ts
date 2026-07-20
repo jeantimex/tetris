@@ -4,7 +4,7 @@ export const COLS = 10;
 export const ROWS = 20;
 
 export type Cell = PieceType | 0;
-export type Phase = 'menu-type' | 'menu-level' | 'menu-settings' | 'start' | 'playing' | 'clearing' | 'paused' | 'gameover' | 'win' | 'enter-name';
+export type Phase = 'welcome' | 'menu-type' | 'menu-level' | 'menu-settings' | 'start' | 'playing' | 'clearing' | 'paused' | 'gameover' | 'win' | 'enter-name';
 export type PauseOption = 'continue' | 'quit';
 export type GameOverOption = 'restart' | 'quit';
 export type GameMode = 'a' | 'b';
@@ -38,7 +38,7 @@ const TOP_KEY = 'tetris-top-score';
 
 export class Game {
   board: Cell[][] = [];
-  phase: Phase = 'menu-type';
+  phase: Phase = 'welcome';
   active: ActivePiece | null = null;
   nextType: PieceType = 'T';
   score = 0;

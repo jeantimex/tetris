@@ -49,7 +49,7 @@ const el = {
 /* ---------- menu state ---------- */
 
 const menuState: MenuState = {
-  phase: 'type',
+  phase: 'welcome',
   gameType: 'a',
   musicType: 1,
   level: 0,
@@ -106,7 +106,13 @@ menuCanvas.addEventListener('click', (e) => {
   if (!region) return;
 
   // Handle the click based on the action and current phase
-  if (game.phase === 'menu-type') {
+  if (game.phase === 'welcome') {
+    if (region.action === 'start' || region.action === 'nav') {
+      menuState.phase = 'type';
+      game.phase = 'menu-type';
+      audio.sfxRotate();
+    }
+  } else if (game.phase === 'menu-type') {
     if (region.action === 'gameType') {
       menuState.gameType = region.value as 'a' | 'b';
       audio.sfxMove();
@@ -184,7 +190,7 @@ menuCanvas.addEventListener('click', (e) => {
 let lastShowMenuState: boolean | null = null;
 
 function updateMenuVisibility(): void {
-  const showMenu = game.phase === 'menu-type' || game.phase === 'menu-level' || game.phase === 'menu-settings';
+  const showMenu = game.phase === 'welcome' || game.phase === 'menu-type' || game.phase === 'menu-level' || game.phase === 'menu-settings';
   menuOverlay.classList.toggle('hidden', !showMenu);
   el.frame.style.display = showMenu ? 'none' : '';
   updateGameControls();
@@ -419,6 +425,13 @@ function handleMenuTypeInput(code: string): void {
       game.phase = 'menu-level';
       audio.sfxRotate();
       break;
+    case 'Escape':
+    case 'Backspace':
+      // Go back to welcome screen
+      menuState.phase = 'welcome';
+      game.phase = 'welcome';
+      audio.sfxMove();
+      break;
   }
 }
 
@@ -599,6 +612,16 @@ window.addEventListener('keydown', (e) => {
   }
 
   // Handle pre-game menu phases
+  if (game.phase === 'welcome') {
+    e.preventDefault();
+    if (e.code === 'Enter' || e.code === 'Space') {
+      menuState.phase = 'type';
+      game.phase = 'menu-type';
+      audio.sfxRotate();
+    }
+    return;
+  }
+
   if (game.phase === 'menu-type') {
     e.preventDefault();
     handleMenuTypeInput(e.code);
@@ -989,9 +1012,11 @@ function frame(now: number): void {
 
   updateMenuVisibility();
 
-  if (game.phase === 'menu-type' || game.phase === 'menu-level' || game.phase === 'menu-settings') {
+  if (game.phase === 'welcome' || game.phase === 'menu-type' || game.phase === 'menu-level' || game.phase === 'menu-settings') {
     // Draw menu
-    if (game.phase === 'menu-type') {
+    if (game.phase === 'welcome') {
+      menuState.phase = 'welcome';
+    } else if (game.phase === 'menu-type') {
       menuState.phase = 'type';
     } else if (game.phase === 'menu-level') {
       menuState.phase = menuState.gameType === 'a' ? 'atype' : 'btype';

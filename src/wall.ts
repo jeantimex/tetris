@@ -109,10 +109,19 @@ function buildSvg(bricks: Cells[]): string {
   );
 }
 
+let currentBricks: Cells[] | null = null;
+
+export function getWallBricks(): Cells[] | null {
+  if (!currentBricks) {
+    currentBricks = generateBricks();
+  }
+  return currentBricks;
+}
+
 export function applyWall(): void {
-  const bricks = generateBricks();
-  if (!bricks) return; // keep the flat CSS color as fallback
-  const uri = `url("data:image/svg+xml,${encodeURIComponent(buildSvg(bricks))}")`;
+  currentBricks = generateBricks();
+  if (!currentBricks) return; // keep the flat CSS color as fallback
+  const uri = `url("data:image/svg+xml,${encodeURIComponent(buildSvg(currentBricks))}")`;
   document.body.style.backgroundImage = uri;
 }
 

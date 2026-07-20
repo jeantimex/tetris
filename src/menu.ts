@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 /**
  * NES-style pre-game menu screens:
  * 1. Game Type / Music Type selection
@@ -5,7 +6,7 @@
  * 3. B-TYPE level + height select with high scores
  */
 
-export type MenuPhase = 'type' | 'atype' | 'btype' | 'settings';
+export type MenuPhase = 'welcome' | 'type' | 'atype' | 'btype' | 'settings';
 export type MusicType = 1 | 2 | 3 | 0; // 0 = OFF
 
 export interface MenuState {
@@ -87,6 +88,8 @@ export class MenuRenderer {
   private height: number;
   private clickRegions: ClickRegion[] = [];
   private scale: number = 1;
+  private redSquareImg: HTMLImageElement;
+  private redSquareLoaded = false;
 
   constructor(canvas: HTMLCanvasElement) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -100,6 +103,24 @@ export class MenuRenderer {
     if (!ctx) throw new Error('no 2d context');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.ctx = ctx;
+
+    this.redSquareImg = new Image();
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const normalizedBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+    const primarySrc = `${normalizedBase}assets/red_square.png`;
+    const fallbackSrc = 'assets/red_square.png';
+
+    this.redSquareImg.onload = () => {
+      this.redSquareLoaded = true;
+    };
+    this.redSquareImg.onerror = () => {
+      if (this.redSquareImg.src !== fallbackSrc && !this.redSquareImg.src.endsWith('/' + fallbackSrc)) {
+        this.redSquareImg.src = fallbackSrc;
+      } else {
+        this.redSquareLoaded = false;
+      }
+    };
+    this.redSquareImg.src = primarySrc;
   }
 
   setScale(scale: number): void {
@@ -136,6 +157,9 @@ export class MenuRenderer {
     ctx.clearRect(0, 0, this.width, this.height);
 
     switch (state.phase) {
+      case 'welcome':
+        this.drawWelcomeScreen();
+        break;
       case 'type':
         this.drawTypeScreen(state);
         break;
@@ -794,6 +818,87 @@ export class MenuRenderer {
       height: 32,
       action: 'nav',
       value: 'next',
+    });
+  }
+
+  private drawWelcomeScreen(): void {
+    const ctx = this.ctx;
+    const cx = this.width / 2;
+
+    // 1. Picture in center: red_square.png (enlarged hero image)
+    const imgW = 430;
+    const imgH = 310;
+    const imgX = cx;
+    const imgY = 226;
+    const inset = 4;
+
+    ctx.fillStyle = COLORS.black;
+    ctx.fillRect(imgX - imgW / 2 - inset, imgY - imgH / 2 - inset, imgW + inset * 2, imgH + inset * 2);
+
+    ctx.strokeStyle = COLORS.gold;
+    ctx.lineWidth = 4;
+    ctx.strokeRect(imgX - imgW / 2 - inset, imgY - imgH / 2 - inset, imgW + inset * 2, imgH + inset * 2);
+
+    ctx.strokeStyle = COLORS.goldLight;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(imgX - imgW / 2 - 2, imgY - imgH / 2 - 2, imgW + 4, imgH + 4);
+
+    const isImageReady = this.redSquareLoaded && this.redSquareImg.complete && this.redSquareImg.naturalWidth !== 0;
+    if (isImageReady) {
+      ctx.drawImage(this.redSquareImg, imgX - imgW / 2, imgY - imgH / 2, imgW, imgH);
+    } else {
+      ctx.fillStyle = COLORS.black;
+      ctx.fillRect(imgX - imgW / 2, imgY - imgH / 2, imgW, imgH);
+    }
+
+    // Corner decorations on image frame
+    const frameColors = { main: COLORS.gold, light: COLORS.goldLight, dark: COLORS.goldDark };
+    this.drawCornerDeco(imgX - imgW / 2 - inset + 4, imgY - imgH / 2 - inset + 4, frameColors);
+    this.drawCornerDeco(imgX + imgW / 2 + inset - 4, imgY - imgH / 2 - inset + 4, frameColors, true);
+    this.drawCornerDeco(imgX - imgW / 2 - inset + 4, imgY + imgH / 2 + inset - 4, frameColors, false, true);
+    this.drawCornerDeco(imgX + imgW / 2 + inset - 4, imgY + imgH / 2 + inset - 4, frameColors, true, true);
+
+    // 2. TETRIS Title Banner at top
+    const titleW = 260;
+    const titleH = 44;
+    const titleY = 32;
+
+    const colors = this.getColorSet('red');
+    ctx.strokeStyle = colors.dark;
+    ctx.lineWidth = 4;
+    ctx.strokeRect(cx - titleW / 2, titleY - titleH / 2, titleW, titleH);
+
+    ctx.strokeStyle = colors.main;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(cx - titleW / 2 + 4, titleY - titleH / 2 + 4, titleW - 8, titleH - 8);
+
+    ctx.fillStyle = COLORS.black;
+    ctx.fillRect(cx - titleW / 2 + 6, titleY - titleH / 2 + 6, titleW - 12, titleH - 12);
+
+    ctx.fillStyle = COLORS.white;
+    ctx.font = `24px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('TETRIS', cx, titleY);
+
+    // 3. Start Button at bottom
+    const btnY = 434;
+    this.drawButton(cx, btnY, 'START', 'green', true, 18);
+
+    // Click regions for Start button & full screen start action
+    this.clickRegions.push({
+      x: cx - 110,
+      y: btnY - 26,
+      width: 220,
+      height: 52,
+      action: 'start',
+    });
+    this.clickRegions.push({
+      x: 0,
+      y: 0,
+      width: this.width,
+      height: this.height,
+      action: 'start',
     });
   }
 }
