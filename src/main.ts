@@ -193,7 +193,7 @@ let lastShowMenuState: boolean | null = null;
 function updateMenuVisibility(): void {
   const showMenu = game.phase === 'welcome' || game.phase === 'menu-type' || game.phase === 'menu-level' || game.phase === 'menu-settings';
   menuOverlay.classList.toggle('hidden', !showMenu);
-  el.wallTileOverlay.classList.toggle('hidden', game.phase !== 'welcome');
+  el.wallTileOverlay.classList.add('hidden');
   el.frame.style.display = showMenu ? 'none' : '';
   updateGameControls();
 

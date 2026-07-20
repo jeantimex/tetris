@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import { getWallBricks, getWallSvgUri } from './wall';
 /**
  * NES-style pre-game menu screens:
  * 1. Game Type / Music Type selection
@@ -82,7 +83,14 @@ const COLORS = {
   gray: '#808080',
 };
 
+interface WallForegroundCell {
+  x: number;
+  y: number;
+  size: number;
+}
+
 export class MenuRenderer {
+  private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private width: number;
   private height: number;
@@ -90,8 +98,14 @@ export class MenuRenderer {
   private scale: number = 1;
   private redSquareImg: HTMLImageElement;
   private redSquareLoaded = false;
+  private wallForegroundImg: HTMLImageElement;
+  private wallForegroundSrc = '';
+  private wallForegroundLoaded = false;
+  private wallForegroundCacheKey = '';
+  private wallForegroundCells: WallForegroundCell[] = [];
 
   constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.width = 512;
     this.height = 480;
@@ -121,10 +135,21 @@ export class MenuRenderer {
       }
     };
     this.redSquareImg.src = primarySrc;
+
+    this.wallForegroundImg = new Image();
+    this.wallForegroundImg.onload = () => {
+      this.wallForegroundLoaded = true;
+    };
+    this.wallForegroundImg.onerror = () => {
+      this.wallForegroundLoaded = false;
+    };
   }
 
   setScale(scale: number): void {
-    this.scale = scale;
+    if (this.scale !== scale) {
+      this.scale = scale;
+      this.wallForegroundCacheKey = '';
+    }
   }
 
   getClickRegions(): ClickRegion[] {
@@ -830,18 +855,6 @@ export class MenuRenderer {
     const imgH = 290;
     const imgX = cx;
     const imgY = 238;
-    const inset = 4;
-
-    ctx.fillStyle = COLORS.black;
-    ctx.fillRect(imgX - imgW / 2 - inset, imgY - imgH / 2 - inset, imgW + inset * 2, imgH + inset * 2);
-
-    ctx.strokeStyle = COLORS.gold;
-    ctx.lineWidth = 4;
-    ctx.strokeRect(imgX - imgW / 2 - inset, imgY - imgH / 2 - inset, imgW + inset * 2, imgH + inset * 2);
-
-    ctx.strokeStyle = COLORS.goldLight;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(imgX - imgW / 2 - 2, imgY - imgH / 2 - 2, imgW + 4, imgH + 4);
 
     const isImageReady = this.redSquareLoaded && this.redSquareImg.complete && this.redSquareImg.naturalWidth !== 0;
     if (isImageReady) {
@@ -851,14 +864,14 @@ export class MenuRenderer {
       ctx.fillRect(imgX - imgW / 2, imgY - imgH / 2, imgW, imgH);
     }
 
-    // Corner decorations on image frame
-    const frameColors = { main: COLORS.gold, light: COLORS.goldLight, dark: COLORS.goldDark };
-    this.drawCornerDeco(imgX - imgW / 2 - inset + 4, imgY - imgH / 2 - inset + 4, frameColors);
-    this.drawCornerDeco(imgX + imgW / 2 + inset - 4, imgY - imgH / 2 - inset + 4, frameColors, true);
-    this.drawCornerDeco(imgX - imgW / 2 - inset + 4, imgY + imgH / 2 + inset - 4, frameColors, false, true);
-    this.drawCornerDeco(imgX + imgW / 2 + inset - 4, imgY + imgH / 2 + inset - 4, frameColors, true, true);
+    this.drawWallForeground({
+      x: imgX - imgW / 2,
+      y: imgY - imgH / 2,
+      width: imgW,
+      height: imgH,
+    });
 
-    // 2. TETRIS Title Banner at top
+    // 2. TETRIS Title Banner at top, above the foreground wall
     const titleW = 280;
     const titleH = 50;
     const titleY = 32;
@@ -889,7 +902,7 @@ export class MenuRenderer {
     ctx.textBaseline = 'middle';
     ctx.fillText('TM', cx - 12 + titleWidth / 2 + 4, titleY - 12);
 
-    // 3. Start Button at bottom
+    // 3. Start Button at bottom, above the foreground wall
     const btnY = 440;
     this.drawButton(cx, btnY, 'START', 'green', true, 18);
 
@@ -907,6 +920,157 @@ export class MenuRenderer {
       width: this.width,
       height: this.height,
       action: 'start',
+    });
+  }
+
+  private drawWallForeground(picture: { x: number; y: number; width: number; height: number }): void {
+    const bricks = getWallBricks();
+    if (!bricks || this.scale <= 0) return;
+
+    const bgSize = parseFloat(getComputedStyle(document.body).backgroundSize);
+    if (!Number.isFinite(bgSize) || bgSize <= 0) return;
+
+    const wallSrc = getWallSvgUri();
+    if (!wallSrc) return;
+    if (wallSrc !== this.wallForegroundSrc) {
+      this.wallForegroundSrc = wallSrc;
+      this.wallForegroundLoaded = false;
+      this.wallForegroundImg.src = wallSrc;
+      this.wallForegroundCacheKey = '';
+    }
+    if (!this.wallForegroundLoaded || !this.wallForegroundImg.complete) return;
+
+    const cellScreen = bgSize / 16;
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const cacheKey = [
+      wallSrc,
+      bgSize,
+      this.scale,
+      canvasRect.left,
+      canvasRect.top,
+      picture.x,
+      picture.y,
+      picture.width,
+      picture.height,
+    ].join(':');
+
+    if (cacheKey !== this.wallForegroundCacheKey) {
+      this.wallForegroundCells = this.getWallForegroundCells(bricks, bgSize, cellScreen, canvasRect, picture);
+      this.wallForegroundCacheKey = cacheKey;
+    }
+
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, this.width, this.height);
+    for (const cell of this.wallForegroundCells) {
+      ctx.rect(cell.x, cell.y, cell.size, cell.size);
+    }
+    ctx.clip('evenodd');
+
+    const minTileX = Math.floor(canvasRect.left / bgSize) - 1;
+    const maxTileX = Math.floor((canvasRect.left + this.width * this.scale) / bgSize) + 1;
+    const minTileY = Math.floor(canvasRect.top / bgSize) - 1;
+    const maxTileY = Math.floor((canvasRect.top + this.height * this.scale) / bgSize) + 1;
+    const tileSize = bgSize / this.scale;
+
+    for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+      for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+        ctx.drawImage(
+          this.wallForegroundImg,
+          (tileX * bgSize - canvasRect.left) / this.scale,
+          (tileY * bgSize - canvasRect.top) / this.scale,
+          tileSize,
+          tileSize,
+        );
+      }
+    }
+
+    ctx.restore();
+  }
+
+  private getWallForegroundCells(
+    bricks: [number, number][][],
+    bgSize: number,
+    cellScreen: number,
+    canvasRect: DOMRect,
+    picture: { x: number; y: number; width: number; height: number },
+  ): WallForegroundCell[] {
+    const pictureScreen = {
+      left: canvasRect.left + picture.x * this.scale,
+      top: canvasRect.top + picture.y * this.scale,
+      right: canvasRect.left + (picture.x + picture.width) * this.scale,
+      bottom: canvasRect.top + (picture.y + picture.height) * this.scale,
+    };
+    const canvasScreen = {
+      left: canvasRect.left,
+      top: canvasRect.top,
+      right: canvasRect.left + this.width * this.scale,
+      bottom: canvasRect.top + this.height * this.scale,
+    };
+
+    const minTileX = Math.floor(canvasScreen.left / bgSize) - 1;
+    const maxTileX = Math.floor(canvasScreen.right / bgSize) + 1;
+    const minTileY = Math.floor(canvasScreen.top / bgSize) - 1;
+    const maxTileY = Math.floor(canvasScreen.bottom / bgSize) + 1;
+    const containedCells: WallForegroundCell[] = [];
+
+    for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+      for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+        const tileLeft = tileX * bgSize;
+        const tileTop = tileY * bgSize;
+
+        for (const brick of bricks) {
+          const unwrappedBrick = this.unwrapWallBrick(brick);
+          const cells = unwrappedBrick.map(([x, y]) => {
+            const left = tileLeft + x * cellScreen;
+            const top = tileTop + y * cellScreen;
+            return {
+              left,
+              top,
+              right: left + cellScreen,
+              bottom: top + cellScreen,
+              canvasX: (left - canvasRect.left) / this.scale,
+              canvasY: (top - canvasRect.top) / this.scale,
+              size: cellScreen / this.scale,
+            };
+          });
+
+          const isInside = cells.every(
+            (cell) =>
+              cell.left >= pictureScreen.left &&
+              cell.top >= pictureScreen.top &&
+              cell.right <= pictureScreen.right &&
+              cell.bottom <= pictureScreen.bottom,
+          );
+          if (!isInside) continue;
+
+          for (const cell of cells) {
+            containedCells.push({
+              x: cell.canvasX,
+              y: cell.canvasY,
+              size: cell.size,
+            });
+          }
+        }
+      }
+    }
+
+    return containedCells;
+  }
+
+  private unwrapWallBrick(brick: [number, number][]): [number, number][] {
+    const [anchorX, anchorY] = brick[0];
+    return brick.map(([x, y]) => {
+      let unwrappedX = x;
+      let unwrappedY = y;
+
+      if (unwrappedX - anchorX > 8) unwrappedX -= 16;
+      if (unwrappedX - anchorX < -8) unwrappedX += 16;
+      if (unwrappedY - anchorY > 8) unwrappedY -= 16;
+      if (unwrappedY - anchorY < -8) unwrappedY += 16;
+
+      return [unwrappedX, unwrappedY];
     });
   }
 }
