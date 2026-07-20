@@ -32,6 +32,7 @@ export interface HighScoreEntry {
 }
 
 const FONT = '"Press Start 2P", monospace';
+const MENU_NAV_Y = 450;
 
 export interface ClickRegion {
   x: number;
@@ -344,10 +345,10 @@ export class MenuRenderer {
     });
 
     // Navigation button - NEXT only (first screen)
-    this.drawNavButton(cx, 450, 'NEXT', 'green');
+    this.drawNavButton(cx, MENU_NAV_Y, 'NEXT', 'green');
     this.clickRegions.push({
       x: cx - 60,
-      y: 450 - 20,
+      y: MENU_NAV_Y - 20,
       width: 120,
       height: 40,
       action: 'nav',
@@ -374,7 +375,7 @@ export class MenuRenderer {
     this.drawHighScores(cx, 280, scores);
 
     // Navigation buttons - positioned below the frame
-    this.drawNavButtons(cx, 460);
+    this.drawNavButtons(cx, MENU_NAV_Y);
   }
 
   private drawBTypeScreen(state: MenuState, scores: HighScoreEntry[], focus: 'level' | 'height'): void {
@@ -398,7 +399,7 @@ export class MenuRenderer {
     this.drawHighScores(cx, 280, scores);
 
     // Navigation buttons - positioned below the frame
-    this.drawNavButtons(cx, 460);
+    this.drawNavButtons(cx, MENU_NAV_Y);
   }
 
   private drawSettingsScreen(state: MenuState): void {
@@ -411,9 +412,9 @@ export class MenuRenderer {
       titleWidth: 220,
       layout: 'horizontal',
       options: [
+        { text: 'DEFAULT', value: 'default', color: 'blue' },
         { text: 'SPACE', value: 'space', color: 'red' },
         { text: 'UP', value: 'up', color: 'green' },
-        { text: 'DEFAULT', value: 'default', color: 'blue' },
       ],
       selectedValue: state.dropKey,
       x: cx,
@@ -439,11 +440,11 @@ export class MenuRenderer {
     });
 
     // Navigation buttons - BACK and START
-    this.drawNavButton(cx - 80, 450, 'BACK', 'red');
-    this.drawNavButton(cx + 80, 450, 'START', 'green');
+    this.drawNavButton(cx - 80, MENU_NAV_Y, 'BACK', 'red');
+    this.drawNavButton(cx + 80, MENU_NAV_Y, 'START', 'green');
     this.clickRegions.push({
       x: cx - 80 - 60,
-      y: 450 - 20,
+      y: MENU_NAV_Y - 20,
       width: 120,
       height: 40,
       action: 'nav',
@@ -451,7 +452,7 @@ export class MenuRenderer {
     });
     this.clickRegions.push({
       x: cx + 80 - 60,
-      y: 450 - 20,
+      y: MENU_NAV_Y - 20,
       width: 120,
       height: 40,
       action: 'nav',
@@ -903,15 +904,15 @@ export class MenuRenderer {
     ctx.fillText('TM', cx - 12 + titleWidth / 2 + 4, titleY - 12);
 
     // 3. Start Button at bottom, above the foreground wall
-    const btnY = 440;
-    this.drawButton(cx, btnY, 'START', 'green', true, 18);
+    const btnY = MENU_NAV_Y;
+    this.drawNavButton(cx, btnY, 'START', 'green');
 
     // Click regions for Start button & full screen start action
     this.clickRegions.push({
-      x: cx - 110,
-      y: btnY - 26,
-      width: 220,
-      height: 52,
+      x: cx - 50,
+      y: btnY - 16,
+      width: 100,
+      height: 32,
       action: 'start',
     });
     this.clickRegions.push({

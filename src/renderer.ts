@@ -2,8 +2,8 @@ import { COLS, ROWS, type Game } from './game';
 import { SHAPES, type PieceType } from './pieces';
 import { colorsFor, type BlockColors } from './palettes';
 
-const BOARD_W = 380;
-const BOARD_H = 760;
+export const BOARD_W = 380;
+export const BOARD_H = 760;
 const CELL = BOARD_W / COLS; // 38
 const NEXT_W = 172;
 const NEXT_H = 160;

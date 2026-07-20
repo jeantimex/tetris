@@ -356,6 +356,7 @@ canvas {
 /* ---------- game controls ---------- */
 
 .game-controls {
+  --control-button-scale: 1;
   position: absolute;
   left: 0;
   top: 710px;
@@ -368,34 +369,43 @@ canvas {
 }
 
 .game-btn {
+  --control-button-width: calc(100px * var(--control-button-scale));
+  --control-button-height: calc(32px * var(--control-button-scale));
+  --control-button-corner: calc(4px * var(--control-button-scale));
+  --control-button-corner-offset: calc(2px * var(--control-button-scale));
+  --control-button-corner-shadow: calc(var(--control-button-width) - var(--control-button-corner) - var(--control-button-corner-offset) * 2);
   font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
-  padding: 12px 24px;
-  border: 2px solid;
+  font-size: calc(12px * var(--control-button-scale));
+  width: var(--control-button-width);
+  height: var(--control-button-height);
+  padding: 0;
+  border: calc(2px * var(--control-button-scale)) solid;
   background: #000;
   cursor: pointer;
   position: relative;
-  min-width: 100px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Corner decorations - 4 corners using pseudo-elements with box-shadow */
 .game-btn::before {
   content: '';
   position: absolute;
-  width: 6px;
-  height: 6px;
-  top: 3px;
-  left: 3px;
+  width: var(--control-button-corner);
+  height: var(--control-button-corner);
+  top: var(--control-button-corner-offset);
+  left: var(--control-button-corner-offset);
 }
 
 .game-btn::after {
   content: '';
   position: absolute;
-  width: 6px;
-  height: 6px;
-  bottom: 3px;
-  left: 3px;
+  width: var(--control-button-corner);
+  height: var(--control-button-corner);
+  bottom: var(--control-button-corner-offset);
+  left: var(--control-button-corner-offset);
 }
 
 .game-btn--start {
@@ -405,12 +415,12 @@ canvas {
 
 .game-btn--start::before {
   background: #70e070;
-  box-shadow: calc(100% - 12px) 0 0 0 #70e070;
+  box-shadow: var(--control-button-corner-shadow) 0 0 0 #70e070;
 }
 
 .game-btn--start::after {
   background: #70e070;
-  box-shadow: calc(100% - 12px) 0 0 0 #70e070;
+  box-shadow: var(--control-button-corner-shadow) 0 0 0 #70e070;
 }
 
 .game-btn--quit {
@@ -420,12 +430,12 @@ canvas {
 
 .game-btn--quit::before {
   background: #e86850;
-  box-shadow: calc(100% - 12px) 0 0 0 #e86850;
+  box-shadow: var(--control-button-corner-shadow) 0 0 0 #e86850;
 }
 
 .game-btn--quit::after {
   background: #e86850;
-  box-shadow: calc(100% - 12px) 0 0 0 #e86850;
+  box-shadow: var(--control-button-corner-shadow) 0 0 0 #e86850;
 }
 
 .game-btn--pause {
@@ -435,12 +445,12 @@ canvas {
 
 .game-btn--pause::before {
   background: #f8d848;
-  box-shadow: calc(100% - 12px) 0 0 0 #f8d848;
+  box-shadow: var(--control-button-corner-shadow) 0 0 0 #f8d848;
 }
 
 .game-btn--pause::after {
   background: #f8d848;
-  box-shadow: calc(100% - 12px) 0 0 0 #f8d848;
+  box-shadow: var(--control-button-corner-shadow) 0 0 0 #f8d848;
 }
 
 .game-btn--resume {
@@ -450,12 +460,12 @@ canvas {
 
 .game-btn--resume::before {
   background: #70e070;
-  box-shadow: calc(100% - 12px) 0 0 0 #70e070;
+  box-shadow: var(--control-button-corner-shadow) 0 0 0 #70e070;
 }
 
 .game-btn--resume::after {
   background: #70e070;
-  box-shadow: calc(100% - 12px) 0 0 0 #70e070;
+  box-shadow: var(--control-button-corner-shadow) 0 0 0 #70e070;
 }
 
 .game-btn:focus {
@@ -483,12 +493,12 @@ canvas {
 
 .game-btn--restart::before {
   background: #70e070;
-  box-shadow: calc(100% - 12px) 0 0 0 #70e070;
+  box-shadow: var(--control-button-corner-shadow) 0 0 0 #70e070;
 }
 
 .game-btn--restart::after {
   background: #70e070;
-  box-shadow: calc(100% - 12px) 0 0 0 #70e070;
+  box-shadow: var(--control-button-corner-shadow) 0 0 0 #70e070;
 }
 
 /* ---------- custom keyboard ---------- */
@@ -666,10 +676,10 @@ canvas {
     width: 230px;
   }
 
-  /* Make buttons bigger */
   .game-btn {
-    font-size: 16px;
-    padding: 16px 30px;
-    min-width: 180px;
+    font-size: calc(12px * var(--control-button-scale));
+    width: var(--control-button-width);
+    height: var(--control-button-height);
+    padding: 0;
   }
 }

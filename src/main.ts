@@ -1,6 +1,6 @@
 import './style.css';
 import { B_TYPE_GOAL, Game } from './game';
-import { Renderer } from './renderer';
+import { BOARD_H, BOARD_W, Renderer } from './renderer';
 import { TYPES, type PieceType } from './pieces';
 import { AudioEngine } from './audio';
 import { applyWall, syncWallScale } from './wall';
@@ -13,8 +13,9 @@ for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas[data-p
 }
 
 const game = new Game();
+const boardCanvas = document.getElementById('board') as HTMLCanvasElement;
 const renderer = new Renderer(
-  document.getElementById('board') as HTMLCanvasElement,
+  boardCanvas,
   document.getElementById('next') as HTMLCanvasElement,
   statCanvases,
 );
@@ -55,7 +56,7 @@ const menuState: MenuState = {
   musicType: 1,
   level: 0,
   height: 0,
-  dropKey: 'space',
+  dropKey: 'default',
   ghost: true,
   typeCursor: 'game',
   musicCursor: 0,
@@ -87,6 +88,7 @@ function fit(): void {
   menuScale = Math.min(vw / 520, vh / 490);
   menuCanvas.style.transform = `scale(${menuScale})`;
   menuRenderer.setScale(menuScale);
+  el.controls.style.setProperty('--control-button-scale', String(menuScale / scale));
 
   // Redraw frames when layout changes
   initFrames();
@@ -506,7 +508,7 @@ function handleMenuSettingsInput(code: string): void {
   switch (code) {
     case 'ArrowLeft': {
       // Cycle drop key left
-      const dropKeys: ('space' | 'up' | 'default')[] = ['space', 'up', 'default'];
+      const dropKeys: ('space' | 'up' | 'default')[] = ['default', 'space', 'up'];
       const idx = dropKeys.indexOf(menuState.dropKey);
       menuState.dropKey = dropKeys[(idx - 1 + dropKeys.length) % dropKeys.length];
       audio.sfxMove();
@@ -514,7 +516,7 @@ function handleMenuSettingsInput(code: string): void {
     }
     case 'ArrowRight': {
       // Cycle drop key right
-      const dropKeys: ('space' | 'up' | 'default')[] = ['space', 'up', 'default'];
+      const dropKeys: ('space' | 'up' | 'default')[] = ['default', 'space', 'up'];
       const idx = dropKeys.indexOf(menuState.dropKey);
       menuState.dropKey = dropKeys[(idx + 1) % dropKeys.length];
       audio.sfxMove();
@@ -545,6 +547,20 @@ function handleMenuSettingsInput(code: string): void {
       audio.sfxRotate();
       break;
   }
+}
+
+function resumePausedGame(): void {
+  game.togglePause();
+  audio.setPaused(false);
+  updateGameControls();
+}
+
+function quitPausedGameToMenu(): void {
+  audio.setPaused(false);
+  audio.stopMusic();
+  game.phase = 'menu-type';
+  menuState.phase = 'type';
+  updateMenuVisibility();
 }
 
 /* ---------- audio ---------- */
@@ -654,25 +670,16 @@ window.addEventListener('keydown', (e) => {
       case 'Enter':
       case 'Space':
         if (game.pauseSelection === 'continue') {
-          game.togglePause();
-          audio.setPaused(false);
-          updateGameControls();
+          resumePausedGame();
         } else {
-          // Quit to main menu
-          audio.setPaused(false); // Reset audio state before stopping
-          audio.stopMusic();
-          game.phase = 'menu-type';
-          menuState.phase = 'type';
-          updateMenuVisibility();
+          quitPausedGameToMenu();
         }
         audio.sfxRotate();
         break;
       case 'Escape':
       case 'KeyP':
         // Resume on ESC/P
-        game.togglePause();
-        audio.setPaused(false);
-        updateGameControls();
+        resumePausedGame();
         break;
     }
     return;
@@ -832,6 +839,29 @@ window.addEventListener('keyup', (e) => {
   }
 });
 
+boardCanvas.addEventListener('click', (e) => {
+  if (game.phase !== 'paused') return;
+
+  const rect = boardCanvas.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * BOARD_W;
+  const y = ((e.clientY - rect.top) / rect.height) * BOARD_H;
+  const cx = BOARD_W / 2;
+  const cy = BOARD_H / 2;
+  const hitX = Math.abs(x - cx) <= 125;
+
+  if (!hitX) return;
+
+  if (Math.abs(y - (cy + 20)) <= 20) {
+    game.pauseSelection = 'continue';
+    resumePausedGame();
+    audio.sfxRotate();
+  } else if (Math.abs(y - (cy + 60)) <= 20) {
+    game.pauseSelection = 'quit';
+    quitPausedGameToMenu();
+    audio.sfxRotate();
+  }
+});
+
 /* ---------- touch/gesture handling for mobile ---------- */
 
 let pointerStartX = 0;
@@ -891,7 +921,7 @@ window.addEventListener('pointermove', (e) => {
         lastStepX += steps * SWIPE_STEP_PX;
       }
     } else if (gestureLock === 'vertical') {
-      if (deltaY > 40 && !hardDroppedThisGesture && game.dropKey !== 'default') {
+      if (deltaY > 40 && !hardDroppedThisGesture) {
         hardDroppedThisGesture = true;
         game.hardDrop();
       }
