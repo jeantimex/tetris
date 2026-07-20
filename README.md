@@ -2,6 +2,8 @@
 
 A responsive web clone of classic NES Tetris, built with TypeScript, HTML5 Canvas, Vanilla CSS, and Vite.
 
+![Welcome](screenshots/welcome.png)
+
 ![B-TYPE Gameplay](screenshots/gameplay.png)
 
 ---
