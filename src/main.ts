@@ -41,6 +41,7 @@ const el = {
   btnRestart: document.getElementById('btn-restart')!,
   keyboardOverlay: document.getElementById('keyboard-overlay')!,
   keyboardInput: document.getElementById('keyboard-input')!,
+  wallTileOverlay: document.getElementById('wall-tile-overlay')!,
 };
 
 // debug/testing hook
@@ -192,6 +193,7 @@ let lastShowMenuState: boolean | null = null;
 function updateMenuVisibility(): void {
   const showMenu = game.phase === 'welcome' || game.phase === 'menu-type' || game.phase === 'menu-level' || game.phase === 'menu-settings';
   menuOverlay.classList.toggle('hidden', !showMenu);
+  el.wallTileOverlay.classList.toggle('hidden', game.phase !== 'welcome');
   el.frame.style.display = showMenu ? 'none' : '';
   updateGameControls();
 

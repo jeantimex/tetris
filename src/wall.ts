@@ -109,6 +109,7 @@ function buildSvg(bricks: Cells[]): string {
   );
 }
 
+let currentSvgUri: string = '';
 let currentBricks: Cells[] | null = null;
 
 export function getWallBricks(): Cells[] | null {
@@ -118,14 +119,30 @@ export function getWallBricks(): Cells[] | null {
   return currentBricks;
 }
 
+export function getWallSvgUri(): string {
+  return currentSvgUri;
+}
+
 export function applyWall(): void {
   currentBricks = generateBricks();
   if (!currentBricks) return; // keep the flat CSS color as fallback
-  const uri = `url("data:image/svg+xml,${encodeURIComponent(buildSvg(currentBricks))}")`;
-  document.body.style.backgroundImage = uri;
+  currentSvgUri = `data:image/svg+xml,${encodeURIComponent(buildSvg(currentBricks))}`;
+  const bg = `url("${currentSvgUri}")`;
+  document.body.style.backgroundImage = bg;
+
+  const overlay = document.getElementById('wall-tile-overlay');
+  if (overlay) {
+    overlay.style.backgroundImage = bg;
+  }
 }
 
 /** Keep the surround wall's brick size in sync with the scaled game frame. */
 export function syncWallScale(scale: number): void {
-  document.body.style.backgroundSize = `${SIZE * scale}px`;
+  const bgSize = `${SIZE * scale}px`;
+  document.body.style.backgroundSize = bgSize;
+
+  const overlay = document.getElementById('wall-tile-overlay');
+  if (overlay) {
+    overlay.style.backgroundSize = bgSize;
+  }
 }
